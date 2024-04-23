@@ -1,6 +1,5 @@
 import cv2
 import tensorflow as tf
-import time
 
 # load labels
 labels = []
@@ -11,6 +10,12 @@ with open("labels.txt", "r") as f:
 # input image size to model
 INPUT_SIZE = (224, 224)
 
+# window name
+WINDOW_NAME = "Frame"
+
+# frame size
+FRAME_SIZE = (800, 600)
+
 # number of frames per clip
 NUM_FRAME_PER_CLIP = 1
 
@@ -19,7 +24,7 @@ def load_model(n_frame_per_clip=1):
   model = tf.saved_model.load("models/movinet")
 
   # genreate initial states
-  states = model.signatures["init_states"](tf.shape(tf.ones([1,NUM_FRAME_PER_CLIP,INPUT_SIZE[0],INPUT_SIZE[1],3])))
+  states = model.signatures["init_states"](tf.shape(tf.ones([1,n_frame_per_clip,INPUT_SIZE[0],INPUT_SIZE[1],3])))
 
   # warm up model
   _ = model({**states, "image":tf.ones([1,1,INPUT_SIZE[0],INPUT_SIZE[1],3])})
@@ -34,11 +39,10 @@ def load_gif(file_path, image_size=(224,224)):
   return video
 
 cap_actions = set()
-
-WINDOW_NAME = "Frame"
+gif_path = "./gifs/output.gif"
 
 try:
-  file_gif = load_gif("./gifs/output.gif") 
+  file_gif = load_gif(gif_path) 
   input_video = file_gif[tf.newaxis, ...]
   frames = tf.split(input_video, input_video.shape[1], axis=1)
   print(f"Total frames: {len(frames)}")
@@ -59,7 +63,7 @@ try:
     # prepare and show image in window
     img = tf.squeeze(frame[0]).numpy()
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    img = cv2.resize(img, (640, 480))
+    img = cv2.resize(img, (FRAME_SIZE))
     img = cv2.putText(img, 
                       f"{true_label} | {prob*100.:.2f}%", 
                       (0, 40),

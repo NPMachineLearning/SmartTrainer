@@ -2,6 +2,7 @@ import cv2
 import imageio
 from pygifsicle import optimize
 import os
+import time
 
 # All setting should be base on
 # v4l2-ctl --list-formats-ext
@@ -10,15 +11,16 @@ import os
 # output and configuration
 # otherwise it will not work in Linux
 WINDOW_NAME = "Frame"
-WINDOW_SIZE = (960, 540)
+WINDOW_SIZE = (800, 600)
 CAM_OUTPUT_FORMATE = "MJPG" 
+FPS = 10
 
 # configure vide cap
 vid = cv2.VideoCapture(0) 
 vid.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*CAM_OUTPUT_FORMATE))
 vid.set(cv2.CAP_PROP_FRAME_WIDTH, WINDOW_SIZE[0])
 vid.set(cv2.CAP_PROP_FRAME_HEIGHT, WINDOW_SIZE[1])
-vid.set(cv2.CAP_PROP_FPS, 30.)
+vid.set(cv2.CAP_PROP_FPS, FPS)
 
 
 # input frames to record
@@ -42,7 +44,8 @@ try:
     cv2.moveWindow(WINDOW_NAME, 30, 40)
     cv2.resizeWindow(WINDOW_NAME, WINDOW_SIZE[0], WINDOW_SIZE[1])
     
-    with imageio.get_writer(os.path.join(save_dir, filename), fps=30) as writer:  
+    with imageio.get_writer(os.path.join(save_dir, filename), fps=FPS) as writer:
+        time.sleep(3.)  
         while(frame_count < n_frames):
             # Capture the video frame 
             # by frame 
@@ -66,14 +69,16 @@ try:
             # the 'q' button is set as the 
             # quitting button you may use any 
             # desired button of your choice 
-            if cv2.waitKey(1) & 0xFF == ord('q'): 
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                print("")
+                print("User close recording")
                 break
             
             # detect the window is closed by user
             if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
-                print("All windows closed")
-                vid.release()
-                cv2.destroyAllWindows()
+                print("")
+                print("User close recording")
+                break
         
         # After the loop release the cap object 
         vid.release() 
