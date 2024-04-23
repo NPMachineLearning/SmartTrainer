@@ -64,7 +64,7 @@ def load_gif(file_path, image_size=(224,224)):
 
 # load gif
 jumpingjack = load_gif(jumpingjack_path)
-jumpingjack.shape
+print(f"jumping jack shape: {jumpingjack.shape}")
 
 """# Base model"""
 
@@ -147,20 +147,21 @@ model.summary()
 
 # add batch to video [batch, frames, height, width, color_channel]
 input_video = jumpingjack[tf.newaxis, ...]
-input_video.shape
+print(f"input video shape: {input_video.shape}")
 
 # split video into frames
 frames = tf.split(input_video, input_video.shape[1], axis=1)
+print(f"frames: {len(frames)}")
 
 # see shape of a frame
 frame = next(iter(frames))
-frame.shape
+print(f"frame shape: {frame.shape}")
 
 # initialize state
 init_states = model.layers[-1].resolved_object.signatures["init_states"](tf.shape(input_video))
 
-name, state = next(iter(init_states.items()))
-print(name, state)
+# name, state = next(iter(init_states.items()))
+# print(name, state)
 
 # make prediction
 # initialize state
