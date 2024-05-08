@@ -16,13 +16,13 @@ NUM_FRAME_PER_CLIP = 1
 
 def load_model(n_frame_per_clip=1):
   # load model and init states
-  model = tf.saved_model.load("models/movinet")
+  model = tf.saved_model.load("models/movinet_a2_stream")
 
   # genreate initial states
-  states = model.signatures["init_states"](tf.shape(tf.ones([1,n_frame_per_clip,INPUT_SIZE[0],INPUT_SIZE[1],3])))
+  states = model.init_states(tf.shape(tf.ones([1,n_frame_per_clip,INPUT_SIZE[0],INPUT_SIZE[1],3])))
 
   # warm up model
-  _ = model({**states, "image":tf.ones([1,1,INPUT_SIZE[0],INPUT_SIZE[1],3])})
+  _ = model({**states, "image":tf.zeros([1,n_frame_per_clip,INPUT_SIZE[0],INPUT_SIZE[1],3])})
   
   return model, states
 
@@ -34,9 +34,9 @@ def load_model(n_frame_per_clip=1):
 # output and configuration
 # otherwise it will not work in Linux
 WINDOW_NAME = "Frame"
-WINDOW_SIZE = (800, 600)
+WINDOW_SIZE = (960, 540)
 CAM_OUTPUT_FORMATE = "MJPG"
-FPS = 10 
+FPS = 30 
 
 # configure vide cap
 vid = cv2.VideoCapture(0) 
@@ -68,23 +68,22 @@ try:
             if ret:
                 # preprocessing frame
                 input_img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                input_img = tf.constant(input_img)
-                input_img = tf.image.resize(input_img, INPUT_SIZE)
-                input_img = tf.cast(input_img, tf.float32) / 255.
+                input_img = tf.image.convert_image_dtype(input_img, dtype=tf.float32)
+                input_img = tf.image.resize_with_pad(input_img, *INPUT_SIZE)
                 # add batch and n frame dimension
                 input_img = input_img[tf.newaxis, tf.newaxis, ...]
-                
+
                 # make prediction
                 output, states = model({**states, "image": input_img})
                 pred_soft = tf.nn.softmax(output)
                 pred_index = tf.argmax(pred_soft, axis=-1).numpy()[0]
                 pred_prob = tf.reduce_max(pred_soft, axis=-1).numpy()[0]
-                true_label =labels[pred_index]
-                distinct_actions.add(true_label)
+                label_name =labels[pred_index]
+                distinct_actions.add(label_name)
                 if pred_prob >= threshold:
-                    high_distinct_actions.add(true_label)
+                    high_distinct_actions.add(label_name)
                     frame = cv2.putText(frame,
-                                    f"{true_label} | {pred_prob*100.:.2f}%",
+                                    f"{label_name} | {pred_prob*100.:.2f}%",
                                     (0, 30),
                                     cv2.FONT_HERSHEY_SIMPLEX,
                                     1,
@@ -92,13 +91,12 @@ try:
                                     2) 
                 else:
                     frame = cv2.putText(frame,
-                                    f"{true_label} | {pred_prob*100.:.2f}%",
+                                    f"{label_name} | {pred_prob*100.:.2f}%",
                                     (0, 30),
                                     cv2.FONT_HERSHEY_SIMPLEX,
                                     1,
                                     (0,255,0),
                                     2)
-                    
                 # display the resulting frame
                 cv2.imshow(WINDOW_NAME, frame)
                 cv2.setWindowTitle(WINDOW_NAME, f"{WINDOW_NAME} | {vid.get(cv2.CAP_PROP_FPS)} FPS")

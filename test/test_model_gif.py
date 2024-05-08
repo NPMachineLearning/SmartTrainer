@@ -21,25 +21,25 @@ NUM_FRAME_PER_CLIP = 1
 
 def load_model(n_frame_per_clip=1):
   # load model and init states
-  model = tf.saved_model.load("models/movinet")
+  model = tf.saved_model.load("models/movinet_a2_stream")
 
   # genreate initial states
-  states = model.signatures["init_states"](tf.shape(tf.ones([1,n_frame_per_clip,INPUT_SIZE[0],INPUT_SIZE[1],3])))
+  states = model.init_states(tf.shape(tf.ones([1,n_frame_per_clip,INPUT_SIZE[0],INPUT_SIZE[1],3])))
 
   # warm up model
-  _ = model({**states, "image":tf.ones([1,1,INPUT_SIZE[0],INPUT_SIZE[1],3])})
+  _ = model({**states, "image":tf.zeros([1,1,INPUT_SIZE[0],INPUT_SIZE[1],3])})
   
   return model, states
 
-def load_gif(file_path, image_size=(224,224)):
+def load_gif(file_path, image_size=INPUT_SIZE):
   raw = tf.io.read_file(file_path)
   video = tf.io.decode_gif(raw)
-  video = tf.image.resize(video, image_size)
-  video = tf.cast(video, tf.float32) / 255.
+  video = tf.image.convert_image_dtype(video, dtype=tf.float32)
+  video = tf.image.resize_with_pad(video, *image_size)
   return video
 
 cap_actions = set()
-gif_path = "./gifs/output.gif"
+gif_path = "./gifs/burpees.gif"
 
 try:
   file_gif = load_gif(gif_path) 

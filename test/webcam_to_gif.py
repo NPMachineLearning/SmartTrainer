@@ -11,9 +11,9 @@ import time
 # output and configuration
 # otherwise it will not work in Linux
 WINDOW_NAME = "Frame"
-WINDOW_SIZE = (800, 600)
+WINDOW_SIZE = (960, 540)
 CAM_OUTPUT_FORMATE = "MJPG" 
-FPS = 10
+FPS = 30
 
 # configure vide cap
 vid = cv2.VideoCapture(0) 
