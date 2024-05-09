@@ -39,7 +39,7 @@ def load_gif(file_path, image_size=INPUT_SIZE):
   return video
 
 cap_actions = set()
-gif_path = "./gifs/burpees.gif"
+gif_path = "./gifs/pushup.gif"
 
 try:
   file_gif = load_gif(gif_path) 
