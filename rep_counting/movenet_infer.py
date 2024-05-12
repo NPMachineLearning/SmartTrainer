@@ -1,6 +1,7 @@
 import tensorflow as tf
 import matplotlib
 import matplotlib.pylab as plt
+import numpy as np
 
 matplotlib.use("TkAgg")
 
@@ -49,27 +50,27 @@ def predict(image, model, input_details, output_details):
     validate_image_dims(image, 4)
     model.set_tensor(input_details[0]['index'], image.numpy())
     model.invoke()
-    kpts_and_scores = model.get_tensor(output_details[0]['index'])
+    kps_and_scores = model.get_tensor(output_details[0]['index'])
     
-    return kpts_and_scores[0][0]
+    return kps_and_scores[0][0]
 
-def preprocess_kpts(kpts, height, width):
+def preprocess_kps(kps, height, width):
     """
     To change keypoints' yx to xy and
     recalculate keypoints position from given
     height and width 
 
     Args:
-        kpts (array): keypoints with dimension [17, 3] in yx coordinate
+        kps (array): keypoints with dimension [17, 3] in yx coordinate
         height (int): height of image
         width (int): width of image
     """
-    for i in range(len(kpts)):
-        temp_y = kpts[i][0]
-        kpts[i][0] = kpts[i][1] * width
-        kpts[i][1] = temp_y * height
+    for i in range(len(kps)):
+        temp_y = kps[i][0]
+        kps[i][0] = kps[i][1] * width
+        kps[i][1] = temp_y * height
         
-    return kpts
+    return kps
     
 def preprocess_input_image(image, size=INPUT_SIZE, pad=False):
     """
@@ -99,11 +100,11 @@ if __name__ == "__main__":
     raw = tf.io.read_file("./gifs/squat.gif")
     raw_image = tf.io.decode_gif(raw)[15]
     image = preprocess_input_image(raw_image, INPUT_SIZE, False)
-    kpts_with_scores = predict(image, interpreter, inputs, outputs)
-    kpts_with_scores = preprocess_kpts(kpts_with_scores, raw_image.shape[0], raw_image.shape[1])
+    kps_with_scores = predict(image, interpreter, inputs, outputs)
+    kps_with_scores = preprocess_kps(kps_with_scores, raw_image.shape[0], raw_image.shape[1])
     fig, ax = plt.subplots(1)
     ax.imshow(raw_image)
-    for kp in kpts_with_scores:
+    for kp in kps_with_scores:
         x, y = kp[0], kp[1]
         ax.add_patch(plt.Circle((x,y), 2.))
     plt.show()
