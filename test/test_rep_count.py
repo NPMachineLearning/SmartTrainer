@@ -8,16 +8,17 @@ import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 from rep_counting.movenet_infer import load_model, predict, preprocess_input_image, preprocess_kps, INPUT_SIZE
-from rep_counting.kps_metrics_jumping_jack import KpsMtricsJumpingJack
+from rep_counting.kps_metrics_jumping_jack import KpsMetricsJumpingJack
 
 WINDOW_NAME = "Frame"
 FRAME_DELAY = 1./3. 
 
-def plot_singal(track, block=True, pause=None, ylim=(0., 1.)):
+def plot_singal(track, block=True, pause=None, ylim=None):
     ax = plt.gca()
     ax.clear()
     ax.plot(list(range(len(track))), track, 'b-')
-    ax.set_ylim(*ylim)
+    if ylim:
+        ax.set_ylim(*ylim)
     plt.show(block=block)
     if pause:
         plt.pause(FRAME_DELAY)
@@ -29,7 +30,7 @@ try:
     cv2.moveWindow(WINDOW_NAME, 30, 40)
     
     model, input_details, output_details = load_model("./models/movenet/movenet_singlepose_thunder_3.tflite")
-    jj_metrics = KpsMtricsJumpingJack()
+    jj_metrics = KpsMetricsJumpingJack(low_pass_filter=True)
     track = []
         
     while(cap.isOpened()):
@@ -43,7 +44,7 @@ try:
             kps = preprocess_kps(kps, height, width)
             kps = jj_metrics.normalize_kps(kps, width, height)
             jj_metrics.update_metrics(kps)
-            track.append(jj_metrics.get_metrics()['lrpalm_dist'])
+            track.append(jj_metrics.get_metrics()[jj_metrics.metric_names.lrpalm_dist.name])
             cv2.imshow(WINDOW_NAME, frame)
             
             # plot singal by frame

@@ -1,105 +1,107 @@
 from .kps_metrics import KpsMetrics
 from .kps_constant import KPS_INDEX_DICT
+from enum import Enum
 
-class KpsMtricsJumpingJack(KpsMetrics):
-    def __init__(self):
-        super().__init__()
+class KpsMetricsJumpingJack(KpsMetrics):
+    metric_names = Enum("JumpingJackMetricNames", [
+        "shl_dist", "lshl_lpalm_dist", "rshl_rPalm_dist", "lshl_rpalm_dist",
+        "rshl_lpalm_dist", "lshl_lhip_dist", "rshl_rhip_dist", "lknee_lhip_dist",
+        "rknee_rhip_dist", "lknee_lfeet_dist", "rknee_rfeet_dist", "lhip_lfeet_dist",
+        "rhip_rfeet_dist", "lpalm_lhip_dist", "rpalm_rhip_dist", "lpalm_lfeet_dist",
+        "rpalm_rfeet_dist", "lrpalm_dist", "lshl_angle", "rshl_angle"
+        ])
     
-    def update_metrics(self, kps):
-        self.state['shl_dist'] = self.distance(KPS_INDEX_DICT.left_shoulder.value,
+    def __init__(self, low_pass_filter=False, low_pass_filter_alpha=0.4):
+        super().__init__(low_pass_filter=low_pass_filter,
+                         low_pass_filter_alpha=low_pass_filter_alpha)
+    
+    def process_metrics(self, kps):
+        self.state[self.metric_names.shl_dist.name] = self.distance(KPS_INDEX_DICT.left_shoulder.value,
                                                KPS_INDEX_DICT.right_shoulder.value,
                                                kps,
                                                'xy')
-        self.state['lshl_lpalm_dist'] = self.distance(KPS_INDEX_DICT.left_shoulder.value,
+        self.state[self.metric_names.lshl_lpalm_dist.name] = self.distance(KPS_INDEX_DICT.left_shoulder.value,
                                                       KPS_INDEX_DICT.left_wrist.value,
                                                       kps,
                                                       'y')
-        self.state['rshl_rPalm_dist'] = self.distance(KPS_INDEX_DICT.right_shoulder.value,
+        self.state[self.metric_names.rshl_rPalm_dist.name] = self.distance(KPS_INDEX_DICT.right_shoulder.value,
                                                       KPS_INDEX_DICT.right_wrist.value,
                                                       kps,
                                                       'y')
-        self.state['lshl_rpalm_dist'] = self.distance(KPS_INDEX_DICT.left_shoulder.value,
+        self.state[self.metric_names.lshl_rpalm_dist.name] = self.distance(KPS_INDEX_DICT.left_shoulder.value,
                                                       KPS_INDEX_DICT.right_wrist.value,
                                                       kps,
                                                       'y')
-        self.state['rShl_lpalm_dist'] = self.distance(KPS_INDEX_DICT.right_shoulder.value,
+        self.state[self.metric_names.rshl_lpalm_dist.name] = self.distance(KPS_INDEX_DICT.right_shoulder.value,
                                                       KPS_INDEX_DICT.left_wrist.value,
                                                       kps,
                                                       'y')
-        self.state['lshl_lHip_dist'] = self.distance(KPS_INDEX_DICT.left_shoulder.value,
+        self.state[self.metric_names.lshl_lhip_dist.name] = self.distance(KPS_INDEX_DICT.left_shoulder.value,
                                                      KPS_INDEX_DICT.left_hip.value,
                                                      kps,
                                                      'y')
-        self.state['rshl_rHip_dist'] = self.distance(KPS_INDEX_DICT.right_shoulder.value,
+        self.state[self.metric_names.rshl_rhip_dist.name] = self.distance(KPS_INDEX_DICT.right_shoulder.value,
                                                      KPS_INDEX_DICT.right_hip.value,
                                                      kps,
                                                      'y')
-        self.state['lknee_lhip_dist'] = self.distance(KPS_INDEX_DICT.left_knee.value,
+        self.state[self.metric_names.lknee_lhip_dist.name] = self.distance(KPS_INDEX_DICT.left_knee.value,
                                                       KPS_INDEX_DICT.left_hip.value,
                                                       kps,
                                                       'y')
-        self.state['rknee_rhip_dist'] = self.distance(KPS_INDEX_DICT.right_knee.value,
+        self.state[self.metric_names.rknee_rhip_dist.name] = self.distance(KPS_INDEX_DICT.right_knee.value,
                                                       KPS_INDEX_DICT.right_hip.value,
                                                       kps,
                                                       'y')
-        self.state['lknee_lfeet_dist'] = self.distance(KPS_INDEX_DICT.left_knee.value,
+        self.state[self.metric_names.lknee_lfeet_dist.name] = self.distance(KPS_INDEX_DICT.left_knee.value,
                                                        KPS_INDEX_DICT.left_ankle.value,
                                                        kps,
                                                        'y')
-        self.state['rknee_rfeet_dist'] = self.distance(KPS_INDEX_DICT.right_knee.value,
+        self.state[self.metric_names.rknee_rfeet_dist.name] = self.distance(KPS_INDEX_DICT.right_knee.value,
                                                        KPS_INDEX_DICT.right_ankle.value,
                                                        kps,
                                                        'y')
-        self.state['lhip_lfeet_dist'] = self.distance(KPS_INDEX_DICT.left_hip.value,
+        self.state[self.metric_names.lhip_lfeet_dist.name] = self.distance(KPS_INDEX_DICT.left_hip.value,
                                                       KPS_INDEX_DICT.left_ankle.value,
                                                       kps,
                                                       'y')
-        self.state['rhip_rfeet_dist'] = self.distance(KPS_INDEX_DICT.right_hip.value,
+        self.state[self.metric_names.rhip_rfeet_dist.name] = self.distance(KPS_INDEX_DICT.right_hip.value,
                                                       KPS_INDEX_DICT.right_ankle.value,
                                                       kps,
                                                       'y')
-        self.state['lpalm_lhip_dist'] = self.distance(KPS_INDEX_DICT.left_wrist.value,
+        self.state[self.metric_names.lpalm_lhip_dist.name] = self.distance(KPS_INDEX_DICT.left_wrist.value,
                                                       KPS_INDEX_DICT.left_hip.value,
                                                       kps,
                                                       'y')
-        self.state['rpalm_rhip_dist'] = self.distance(KPS_INDEX_DICT.right_wrist.value,
+        self.state[self.metric_names.rpalm_rhip_dist.name] = self.distance(KPS_INDEX_DICT.right_wrist.value,
                                                       KPS_INDEX_DICT.right_hip.value,
                                                       kps,
                                                       'y')
-        self.state['lpalm_lfeet_dist'] = self.distance(KPS_INDEX_DICT.left_wrist.value,
+        self.state[self.metric_names.lpalm_lfeet_dist.name] = self.distance(KPS_INDEX_DICT.left_wrist.value,
                                                        KPS_INDEX_DICT.left_ankle.value,
                                                        kps,
                                                        'y')
-        self.state['rpalm_rfeet_dist'] = self.distance(KPS_INDEX_DICT.right_wrist.value,
+        self.state[self.metric_names.rpalm_rfeet_dist.name] = self.distance(KPS_INDEX_DICT.right_wrist.value,
                                                        KPS_INDEX_DICT.right_ankle.value,
                                                        kps,
                                                        'y')
-        self.state['lrpalm_dist'] = self.distance(KPS_INDEX_DICT.left_wrist.value,
+        self.state[self.metric_names.lrpalm_dist.name] = self.distance(KPS_INDEX_DICT.left_wrist.value,
                                                   KPS_INDEX_DICT.right_wrist.value,
                                                   kps,
                                                   'x')
-        self.state['lshl_angle'] = self.angle(KPS_INDEX_DICT.left_elbow.value,
+        self.state[self.metric_names.lshl_angle.name] = self.angle(KPS_INDEX_DICT.left_elbow.value,
                                               KPS_INDEX_DICT.left_shoulder.value,
                                               KPS_INDEX_DICT.left_hip.value,
                                               kps)
-        self.state['rshl_angle'] = self.angle(KPS_INDEX_DICT.right_elbow.value,
+        self.state[self.metric_names.rshl_angle.name] = self.angle(KPS_INDEX_DICT.right_elbow.value,
                                               KPS_INDEX_DICT.right_shoulder.value,
                                               KPS_INDEX_DICT.right_hip.value,
                                               kps)
     
     def get_metric_names(self):
-        metricNames = [
-        "shl_dist", "lshl_lpalm_dist", "rshl_rPalm_dist", "lshl_rpalm_dist",
-        "rShl_lpalm_dist", "lshl_lHip_dist", "rshl_rhip_dist", "lknee_lhip_dist",
-        "rknee_rhip_dist", "lknee_lfeet_dist", "rknee_rfeet_dist", "lhip_lfeet_dist",
-        "rhip_rfeet_dist", "lpalm_lhip_dist", "rpalm_rhip_dist", "lpalm_lfeet_dist",
-        "rpalm_rfeet_dist", "lrpalm_dist", "lshl_angle", "rshl_angle"
-        ]
-        
-        return metricNames
+        return self.metric_names
     
 if __name__ == "__main__":
-    jj = KpsMtricsJumpingJack()
+    jj = KpsMetricsJumpingJack()
  
 
     

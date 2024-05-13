@@ -1,21 +1,57 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 import math
 import numpy as np
+from .low_pass_filter import LPFilter
 
 class KpsMetrics(ABC):
-    def __init__(self):
+    def __init__(self, low_pass_filter=False, low_pass_filter_alpha=0.4):
+        """
+        Create a keypoints metric object
+        
+        Args:
+            low_pass_filter (bool, optional): True using low pass filter to filter out 
+            high frequency singal result in a smooth singal. Range (0.0, 1.0]. Defaults to False.
+            low_pass_filter_alpha (float, optional): alpha value for low pass filter 1.0 to not filter
+            out high frequency singal. Defaults to 0.4.
+        """
         super().__init__()
-        self.state = {metric_name:0 for metric_name in self.get_metric_names()}
+        self.state = {e.name:0. for e in self.get_metric_names()}
+        self.lpfs = {e.name:LPFilter() for e in self.get_metric_names()} if low_pass_filter else None
+        self.low_pass_filter = low_pass_filter
+        if low_pass_filter_alpha <= 0.0 or low_pass_filter_alpha > 1.0:
+            raise Exception(f"low_pass_filter must in range (0.0, 1.0], greater than 0.0 and smaller and equal to 1.0")
+        self.low_pass_filter_alpha = low_pass_filter_alpha
     
     @abstractmethod
-    def get_metric_names(self):
+    def get_metric_names(self) -> Enum:
         pass
+    
+    def update_metrics(self, kps) -> None:
+        self.process_metrics(kps)
+        # apply low pass filter on metrics
+        if self.low_pass_filter and self.lpfs:
+            if len(self.state) != len(self.lpfs):
+                raise Exception(f"length of state and filter(lpfs) are not equal {len(self.state)} {len(self.lpfs)}")
+            self.filter_metrics()
     
     @abstractmethod
-    def update_metrics(self, kps):
+    def process_metrics(self, kps) -> None:
         pass
     
-    def get_metrics(self):
+    def filter_metrics(self) -> None:
+        for metric_name in list(self.state.keys()):
+            # get low pass filter
+            lpf = self.lpfs[metric_name]
+            
+            # get current metric 
+            metric = self.state[metric_name]
+            
+            # update metric
+            self.state[metric_name] = lpf.update(metric, 
+                                                 self.low_pass_filter_alpha)
+    
+    def get_metrics(self) -> dict[str, float]:
         return self.state
     
     @staticmethod
