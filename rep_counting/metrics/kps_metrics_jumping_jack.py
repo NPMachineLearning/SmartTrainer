@@ -1,5 +1,5 @@
 from .kps_metrics import KpsMetrics
-from .kps_constant import KPS_INDEX_DICT
+from constant.kps_constant import KPS_INDEX_DICT
 from enum import Enum
 
 class KpsMetricsJumpingJack(KpsMetrics):
@@ -11,7 +11,7 @@ class KpsMetricsJumpingJack(KpsMetrics):
         "rpalm_rfeet_dist", "lrpalm_dist", "lshl_angle", "rshl_angle"
         ])
     
-    def __init__(self, low_pass_filter=False, low_pass_filter_alpha=0.4):
+    def __init__(self, low_pass_filter=True, low_pass_filter_alpha=0.4):
         super().__init__(low_pass_filter=low_pass_filter,
                          low_pass_filter_alpha=low_pass_filter_alpha)
     

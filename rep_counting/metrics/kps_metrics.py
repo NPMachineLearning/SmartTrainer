@@ -2,16 +2,16 @@ from abc import ABC, abstractmethod
 from enum import Enum
 import math
 import numpy as np
-from .low_pass_filter import LPFilter
+from filter.low_pass_filter import LPFilter
 
 class KpsMetrics(ABC):
-    def __init__(self, low_pass_filter=False, low_pass_filter_alpha=0.4):
+    def __init__(self, low_pass_filter=True, low_pass_filter_alpha=0.4):
         """
         Create a keypoints metric object
         
         Args:
             low_pass_filter (bool, optional): True using low pass filter to filter out 
-            high frequency singal result in a smooth singal. Range (0.0, 1.0]. Defaults to False.
+            high frequency singal result in a smooth singal. Range (0.0, 1.0]. Defaults to True.
             low_pass_filter_alpha (float, optional): alpha value for low pass filter 1.0 to not filter
             out high frequency singal. Defaults to 0.4.
         """

@@ -7,8 +7,8 @@ import time
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
-from rep_counting.movenet_infer import load_model, predict, preprocess_input_image, preprocess_kps, INPUT_SIZE
-from rep_counting.kps_metrics_jumping_jack import KpsMetricsJumpingJack
+from rep_counting.movenet.movenet_infer import load_model, predict, preprocess_input_image, preprocess_kps, INPUT_SIZE
+from rep_counting.metrics.kps_metrics_jumping_jack import KpsMetricsJumpingJack
 
 WINDOW_NAME = "Frame"
 FRAME_DELAY = 1./3. 
@@ -29,7 +29,7 @@ try:
     cv2.namedWindow(WINDOW_NAME)
     cv2.moveWindow(WINDOW_NAME, 30, 40)
     
-    model, input_details, output_details = load_model("./models/movenet/movenet_singlepose_thunder_3.tflite")
+    model, input_details, output_details = load_model()
     jj_metrics = KpsMetricsJumpingJack(low_pass_filter=True)
     track = []
         
@@ -76,4 +76,4 @@ try:
 except Exception as e:
     print(e)
     cap.release()
-    cv2.destroyAllWindows()
+    cv2.destroyAllWindows() 

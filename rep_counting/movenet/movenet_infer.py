@@ -1,11 +1,10 @@
 import tensorflow as tf
 import matplotlib
 import matplotlib.pylab as plt
-import numpy as np
 
 matplotlib.use("TkAgg")
 
-MODEL_PATH = "./models/movenet/movenet_singlepose_thunder_3.tflite"
+MODEL_PATH = "./rep_counting/movenet/movenet_singlepose_thunder_3.tflite"
 INPUT_SIZE = (256, 256)
 
 def validate_tensor_image(image):
@@ -17,7 +16,7 @@ def validate_image_dims(image, ndims):
     if ndims != image_dims:
         raise Exception(f"image must be in dimension of {ndims} but got {image_dims}")
     
-def load_model(model_path):
+def load_model(model_path=MODEL_PATH):
     """
     Load movenet model
 
