@@ -2,10 +2,12 @@ from abc import ABC, abstractmethod
 from enum import Enum
 import math
 import numpy as np
-from filter.low_pass_filter import LPFilter
+import os
+import json
+from ..filter.low_pass_filter import LPFilter
 
 class KpsMetrics(ABC):
-    def __init__(self, low_pass_filter=True, low_pass_filter_alpha=0.4):
+    def __init__(self, low_pass_filter=True, low_pass_filter_alpha=0.4, config_path=None):
         """
         Create a keypoints metric object
         
@@ -14,45 +16,97 @@ class KpsMetrics(ABC):
             high frequency singal result in a smooth singal. Range (0.0, 1.0]. Defaults to True.
             low_pass_filter_alpha (float, optional): alpha value for low pass filter 1.0 to not filter
             out high frequency singal. Defaults to 0.4.
+            config_path (str, optional): path to json config file contain data for exercise and used to
+            count exercise reptition.
         """
         super().__init__()
-        self.state = {e.name:0. for e in self.get_metric_names()}
+        self.states = {e.name:0. for e in self.get_metric_names()}
         self.lpfs = {e.name:LPFilter() for e in self.get_metric_names()} if low_pass_filter else None
         self.low_pass_filter = low_pass_filter
         if low_pass_filter_alpha <= 0.0 or low_pass_filter_alpha > 1.0:
             raise Exception(f"low_pass_filter must in range (0.0, 1.0], greater than 0.0 and smaller and equal to 1.0")
         self.low_pass_filter_alpha = low_pass_filter_alpha
-    
+        self.config = None
+        self.tracked_metrics = []
+        self.reptition_count = 0
+        
+        # load config data if provided
+        if config_path:
+            if not os.path.exists(config_path):
+                raise Exception(f"{config_path} doesn't exists")
+            
+            if os.path.isdir(config_path):
+                raise Exception(f"{config_path} must be a file")
+            
+            with open(config_path, 'r') as f:
+                    config_data = json.load(f)
+                    self.config = self._load_config_data(config_data)
+
     @abstractmethod
     def get_metric_names(self) -> Enum:
         pass
     
-    def update_metrics(self, kps) -> None:
-        self.process_metrics(kps)
-        # apply low pass filter on metrics
-        if self.low_pass_filter and self.lpfs:
-            if len(self.state) != len(self.lpfs):
-                raise Exception(f"length of state and filter(lpfs) are not equal {len(self.state)} {len(self.lpfs)}")
-            self.filter_metrics()
-    
     @abstractmethod
-    def process_metrics(self, kps) -> None:
+    def _load_config_data(self, config_data) -> dict:
         pass
     
-    def filter_metrics(self) -> None:
-        for metric_name in list(self.state.keys()):
+    @abstractmethod
+    def _process_metrics(self, kps) -> None:
+        pass
+    
+    @abstractmethod
+    def _is_a_rep(self, mean, win_left, win_right) -> bool:
+        pass
+    
+    def update_metrics(self, kps) -> None:
+        self._process_metrics(kps)
+        # apply low pass filter on metrics
+        if self.low_pass_filter and self.lpfs:
+            if len(self.states) != len(self.lpfs):
+                raise Exception(f"length of states and filter(lpfs) are not equal {len(self.states)} {len(self.lpfs)}")
+            self._low_pass_filter_metrics()
+        
+        if self.config is not None:
+            # filter out stationary metrics
+            motion_names = self.config['motion_names']
+            none_stationary_metrics = [[] for _ in motion_names]
+            for i, name in enumerate(motion_names):
+                metric = self.states[name]
+                none_stationary_metrics[i].append(metric)
+            none_stationary_metrics = np.array(none_stationary_metrics)
+            
+            # sum none stationary metrics
+            sum_metric = np.sum(none_stationary_metrics, axis=0)[0]
+            self.tracked_metrics.append(sum_metric)
+            
+            # update reptition count
+            mean = self.config['reference']['mean']
+            window_size = 2
+            metric_seg = self.tracked_metrics[-window_size:]
+            win_left = metric_seg[0]
+            win_right = metric_seg[-1]
+            valid_rep = self._is_a_rep(mean, win_left, win_right)
+            if valid_rep:
+                self.reptition_count += 1
+            
+    
+    def _low_pass_filter_metrics(self) -> None:
+        for metric_name in list(self.states.keys()):
             # get low pass filter
             lpf = self.lpfs[metric_name]
             
             # get current metric 
-            metric = self.state[metric_name]
+            metric = self.states[metric_name]
             
             # update metric
-            self.state[metric_name] = lpf.update(metric, 
+            self.states[metric_name] = lpf.update(metric, 
                                                  self.low_pass_filter_alpha)
     
     def get_metrics(self) -> dict[str, float]:
-        return self.state
+        return self.states
+    
+    def get_reptition_count(self) -> int:
+        return self.reptition_count
     
     @staticmethod
     def distance(kpi1:int, kpi2:int, kps, on_axis='xy', ratio=None):

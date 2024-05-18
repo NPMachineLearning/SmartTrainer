@@ -4,6 +4,7 @@ sys.path.insert(1, os.getcwd())
 import tensorflow as tf
 import cv2
 import time
+import traceback
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
@@ -13,12 +14,13 @@ from rep_counting.metrics.kps_metrics_jumping_jack import KpsMetricsJumpingJack
 WINDOW_NAME = "Frame"
 FRAME_DELAY = 1./3. 
 
-def plot_singal(track, block=True, pause=None, ylim=None):
+def plot_singal(track, block=True, pause=None, ylim=None, title=""):
     ax = plt.gca()
     ax.clear()
     ax.plot(list(range(len(track))), track, 'b-')
     if ylim:
         ax.set_ylim(*ylim)
+    ax.set_title(title)
     plt.show(block=block)
     if pause:
         plt.pause(FRAME_DELAY)
@@ -30,7 +32,7 @@ try:
     cv2.moveWindow(WINDOW_NAME, 30, 40)
     
     model, input_details, output_details = load_model()
-    jj_metrics = KpsMetricsJumpingJack(low_pass_filter=True)
+    jj_metrics = KpsMetricsJumpingJack(config_path='./smart_trainer_config/config.json')
     track = []
         
     while(cap.isOpened()):
@@ -48,7 +50,7 @@ try:
             cv2.imshow(WINDOW_NAME, frame)
             
             # plot singal by frame
-            plot_singal(track, block=False, pause=FRAME_DELAY)
+            plot_singal(track, block=False, pause=FRAME_DELAY, title=f"rep: {jj_metrics.reptition_count}")
         else:
             break
         
@@ -64,8 +66,7 @@ try:
         if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
             break
         
-        time.sleep(FRAME_DELAY)
-        
+        time.sleep(FRAME_DELAY)    
     # After the loop release the cap object 
     cap.release() 
     # Destroy all the windows 
@@ -74,6 +75,6 @@ try:
     # plot signal 
     plot_singal(track)
 except Exception as e:
-    print(e)
+    print(traceback.format_exc())
     cap.release()
     cv2.destroyAllWindows() 

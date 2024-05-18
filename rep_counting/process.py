@@ -21,7 +21,7 @@ exercise_metrics = {
     "jumpingjack": KpsMetricsJumpingJack()
 }
 
-def main(vid_path, exercise_name, output_filename):
+def main(vid_path, exercise_name, output_directory):
     if not os.path.exists(vid_path):
         raise Exception(f"{vid_path} doesn't exists")
     if not os.path.isfile(vid_path):
@@ -93,20 +93,31 @@ def main(vid_path, exercise_name, output_filename):
         # stationary
         tracks_sum = np.sum(filter_tracks, axis=0)
         
-        # save data
+        # data
         statistics = {}
         statistics['mean'] = np.mean(tracks_sum)
+        statistics['std'] = np.std(tracks_sum)
         statistics['width'] = INPUT_SIZE[1]
         statistics['height'] = INPUT_SIZE[0]
-        data = {"motion_names": filter_metric_names,
-                "reference": statistics}
+        statistic_data = {"motion_names": filter_metric_names,
+                          "reference": statistics}
         
-        dir = os.path.join(*(output_filename.split("/")[:-1]))
-        if not os.path.isdir(dir):
-            os.makedirs(dir)
-            
-        with open(output_filename, "w") as f:
-            f.write(json.dumps(data))
+        # create directory if not exists
+        if not os.path.isdir(output_directory):
+            os.makedirs(output_directory)
+        
+        # save config file
+        output_filename = os.path.join(output_directory, 'config.json')
+        if os.path.isfile(output_filename):
+            with open(output_filename, 'r') as f:
+                config_data = json.load(f)
+                config_data[exercise_name] = statistic_data
+            with open(output_filename, 'w') as f:
+                f.write(json.dumps(config_data))
+        else:    
+            with open(output_filename, "w") as f:
+                config_data = {exercise_name: statistic_data}
+                f.write(json.dumps(config_data))
         
         # plot result
         plt.plot(list(range(tracks_sum.shape[0])), tracks_sum, label="signals")
@@ -115,7 +126,7 @@ def main(vid_path, exercise_name, output_filename):
                    [tracks_sum.shape[0]-1], 
                    colors="black", 
                    linestyles="dashed",
-                   label="mean")
+                   label=f"mean {statistics['mean']:.2f}")
         plt.ylabel(f"sum of signals per frames")
         plt.xlabel("frames")
         plt.legend()
@@ -129,9 +140,9 @@ def main(vid_path, exercise_name, output_filename):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--video", help="Path to video file", required=True)
-    parser.add_argument("--exer_name", help="Exercise name to be processed", required=True)
-    parser.add_argument("--output_name", help="Output filename", required=True)
+    parser.add_argument("--exercise_name", help="Exercise name to be processed", required=True)
+    parser.add_argument("--output_directory", help="Output directory", required=False, default="./smart_trainer_config")
     args = parser.parse_args()
     
-    main(args.video, args.exer_name.lower(), args.output_name)
+    main(args.video, args.exercise_name.lower(), args.output_directory)
     # main("./gifs/squat.gif","JumpingJack".lower(), "./config/jumpingjack.json")
