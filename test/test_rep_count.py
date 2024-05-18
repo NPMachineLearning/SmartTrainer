@@ -14,13 +14,16 @@ from rep_counting.metrics.kps_metrics_jumping_jack import KpsMetricsJumpingJack
 WINDOW_NAME = "Frame"
 FRAME_DELAY = 1./3. 
 
-def plot_singal(track, block=True, pause=None, ylim=None, title=""):
+def plot_singal(track, mean=None, block=True, pause=None, ylim=None, title=""):
     ax = plt.gca()
     ax.clear()
     ax.plot(list(range(len(track))), track, 'b-')
     if ylim:
         ax.set_ylim(*ylim)
     ax.set_title(title)
+    if mean:
+        plt.hlines([mean, mean], xmin=[0], xmax=[len(track)], colors="red", label=f"mean:{mean:.2f}")
+    plt.legend()
     plt.show(block=block)
     if pause:
         plt.pause(FRAME_DELAY)
@@ -33,7 +36,6 @@ try:
     
     model, input_details, output_details = load_model()
     jj_metrics = KpsMetricsJumpingJack(config_path='./smart_trainer_config/config.json')
-    track = []
         
     while(cap.isOpened()):
         ret, frame = cap.read()
@@ -46,11 +48,14 @@ try:
             kps = preprocess_kps(kps, height, width)
             kps = jj_metrics.normalize_kps(kps, width, height)
             jj_metrics.update_metrics(kps)
-            track.append(jj_metrics.get_metrics()[jj_metrics.metric_names.lrpalm_dist.name])
             cv2.imshow(WINDOW_NAME, frame)
             
             # plot singal by frame
-            plot_singal(track, block=False, pause=FRAME_DELAY, title=f"rep: {jj_metrics.reptition_count}")
+            plot_singal(jj_metrics.tracked_metrics, 
+                        mean=jj_metrics.config['reference']['mean'], 
+                        block=False, 
+                        pause=FRAME_DELAY, 
+                        title=f"rep: {jj_metrics.reptition_count}")
         else:
             break
         
@@ -73,7 +78,9 @@ try:
     cv2.destroyAllWindows()
     
     # plot signal 
-    plot_singal(track)
+    plot_singal(jj_metrics.tracked_metrics, 
+                mean=jj_metrics.config['reference']['mean'], 
+                title=f"rep: {jj_metrics.reptition_count}")
 except Exception as e:
     print(traceback.format_exc())
     cap.release()

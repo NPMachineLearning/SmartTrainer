@@ -55,7 +55,7 @@ class KpsMetrics(ABC):
         pass
     
     @abstractmethod
-    def _is_a_rep(self, mean, win_left, win_right) -> bool:
+    def _is_a_rep(self, mean, windowed_metrics) -> bool:
         pass
     
     def update_metrics(self, kps) -> None:
@@ -82,10 +82,8 @@ class KpsMetrics(ABC):
             # update reptition count
             mean = self.config['reference']['mean']
             window_size = 2
-            metric_seg = self.tracked_metrics[-window_size:]
-            win_left = metric_seg[0]
-            win_right = metric_seg[-1]
-            valid_rep = self._is_a_rep(mean, win_left, win_right)
+            windowed_metrics = self.tracked_metrics[-window_size:]
+            valid_rep = self._is_a_rep(mean, windowed_metrics)
             if valid_rep:
                 self.reptition_count += 1
             

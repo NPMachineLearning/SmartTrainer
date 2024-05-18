@@ -1,6 +1,7 @@
 from .kps_metrics import KpsMetrics
 from ..constant.kps_constant import KPS_INDEX_DICT
 from enum import Enum
+import numpy as np
 
 class KpsMetricsJumpingJack(KpsMetrics):
     metric_names = Enum("JumpingJackMetricNames", [
@@ -17,7 +18,6 @@ class KpsMetricsJumpingJack(KpsMetrics):
         super().__init__(low_pass_filter=low_pass_filter,
                          low_pass_filter_alpha=low_pass_filter_alpha,
                          config_path=config_path)
-        print(self.config)
     
     def _load_config_data(self, config_data) -> dict:
         data = config_data.get(self.exercise_name, None)
@@ -25,8 +25,10 @@ class KpsMetricsJumpingJack(KpsMetrics):
             raise Exception(f"{self.exercise_name} was not found in config file")
         return data
     
-    def _is_a_rep(self, mean, win_left, win_right) -> bool:
-        if win_left > mean and win_right < mean:
+    def _is_a_rep(self, mean, windowed_metrics) -> bool:
+        left = windowed_metrics[0]
+        right = windowed_metrics[-1]
+        if left > mean and right < mean:
             return True
         return False
     
