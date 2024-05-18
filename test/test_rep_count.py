@@ -9,7 +9,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 from rep_counting.movenet.movenet_infer import load_model, predict, preprocess_input_image, preprocess_kps, INPUT_SIZE
-from rep_counting.metrics.kps_metrics_jumping_jack import KpsMetricsJumpingJack
+from rep_counting.pkg.kps_metrics_jumping_jack import KpsMetricsJumpingJack
 
 WINDOW_NAME = "Frame"
 FRAME_DELAY = 1./3. 

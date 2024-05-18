@@ -1,5 +1,6 @@
 import os
-import os
+import sys
+sys.path.insert(0, os.getcwd())
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import traceback 
 import tensorflow as tf
@@ -12,7 +13,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 from movenet.movenet_infer import load_model, predict, preprocess_input_image, preprocess_kps, INPUT_SIZE
-from metrics.kps_metrics_jumping_jack import KpsMetricsJumpingJack
+from pkg.kps_metrics_jumping_jack import KpsMetricsJumpingJack
 
 WINDOW_NAME = "Frame"
 FRAME_DELAY = 1./30.

@@ -4,7 +4,7 @@ import math
 import numpy as np
 import os
 import json
-from ..filter.low_pass_filter import LPFilter
+from .low_pass_filter import LPFilter
 
 class KpsMetrics(ABC):
     def __init__(self, low_pass_filter=True, low_pass_filter_alpha=0.4, config_path=None):
@@ -118,7 +118,7 @@ class KpsMetrics(ABC):
         
         if on_axis == 'xy':
             dxdy = dx**2 - dy**2
-            dist = math.sqrt(dxdy)
+            dist = math.sqrt(abs(dxdy))
         elif on_axis == 'x':
             dist = abs(dx)
         elif on_axis == 'y':

@@ -1,5 +1,5 @@
 from .kps_metrics import KpsMetrics
-from ..constant.kps_constant import KPS_INDEX_DICT
+from .kps_constant import KPS_INDEX_DICT
 from enum import Enum
 import numpy as np
 
