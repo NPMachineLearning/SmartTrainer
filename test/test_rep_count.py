@@ -12,7 +12,7 @@ from rep_counting.movenet.movenet_infer import load_model, predict, preprocess_i
 from rep_counting.pkg.kps_metrics_jumping_jack import KpsMetricsJumpingJack
 
 WINDOW_NAME = "Frame"
-FRAME_DELAY = 1./3. 
+FRAME_DELAY = 1./1. 
 
 def plot_singal(track, mean=None, block=True, pause=None, ylim=None, title=""):
     ax = plt.gca()
@@ -80,7 +80,7 @@ try:
     # plot signal 
     plot_singal(jj_metrics.tracked_metrics, 
                 mean=jj_metrics.config['reference']['mean'], 
-                title=f"rep: {jj_metrics.reptition_count}")
+                title=f"Repetition: {jj_metrics.reptition_count}")
 except Exception as e:
     print(traceback.format_exc())
     cap.release()
