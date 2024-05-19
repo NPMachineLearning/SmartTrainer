@@ -33,7 +33,7 @@ def load_model(model_path=MODEL_PATH):
 
 def predict(image, model, input_details, output_details):
     """
-    Gnereate keypoints in yx coordinate
+    Use movenet model to gnereate keypoints in yx coordinate from image
 
     Args:
         image (Tensor): Image to generate keypoints
@@ -42,8 +42,9 @@ def predict(image, model, input_details, output_details):
         output_details : output_details from movenet model
 
     Returns:
-        numpy array: in dimension [17, 3] in yx corrdinate for first two value in last dimension
-        and they are in range of 0.0-1.0
+        NDArray: in dimension [17, 3], first two value is coordinate in yx from last dimension
+        and they are in range of 0.0-1.0, last value is confident score from last dimension, 
+        first dimension is 17 keypoints 
     """
     validate_tensor_image(image)
     validate_image_dims(image, 4)
@@ -53,23 +54,44 @@ def predict(image, model, input_details, output_details):
     
     return kps_and_scores[0][0]
 
-def preprocess_kps(kps, height, width):
+def preprocess_kps(kps, scale_xy=(1., 1.)):
     """
-    To change keypoints' yx to xy and
-    recalculate keypoints position from given
-    height and width 
+    Change keypoints yx coordinate from movenet to xy coordinate
 
     Args:
-        kps (array): keypoints with dimension [17, 3] in yx coordinate
-        height (int): height of image
-        width (int): width of image
+        kps (NDArray): Numpy 2d array straight from movenet in yx coordinate.
+        expect coordinate in yx.
+        scale_xy (tuple, optional): Scale on x and y for keypoints. 
+        Defaults to (1., 1.).
+
+    Returns:
+        NDArray: Numpy 2d array in xy coordinate and scaled if scale_xy was
+        provided.
     """
     for i in range(len(kps)):
         temp_y = kps[i][0]
-        kps[i][0] = kps[i][1] * width
-        kps[i][1] = temp_y * height
+        kps[i][0] = kps[i][1] * scale_xy[0]
+        kps[i][1] = temp_y * scale_xy[1]
         
     return kps
+
+def normalize_kps(kps, image_width, image_height):
+        """
+        Normalize keypoints by image width and height
+
+        Args:
+            kps (dict): keypoints
+            image_width (int): image width
+            image_height (int): image height
+
+        Returns:
+            _type_: _description_
+        """
+        for kp in kps:
+            kp[0] /= image_width
+            kp[1] /= image_height
+            
+        return kps
     
 def preprocess_input_image(image, size=INPUT_SIZE, pad=False):
     """

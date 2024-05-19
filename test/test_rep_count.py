@@ -8,7 +8,7 @@ import traceback
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
-from rep_counting.movenet.movenet_infer import load_model, predict, preprocess_input_image, preprocess_kps, INPUT_SIZE
+from rep_counting.movenet.movenet_infer import load_model, predict, preprocess_input_image, preprocess_kps, normalize_kps, INPUT_SIZE
 from rep_counting.pkg.kps_metrics_jumping_jack import KpsMetricsJumpingJack
 
 WINDOW_NAME = "Frame"
@@ -45,8 +45,9 @@ try:
             height, width = input_img.shape[0], input_img.shape[1]
             input_img = preprocess_input_image(input_img, INPUT_SIZE)
             kps = predict(input_img, model, input_details, output_details)
-            kps = preprocess_kps(kps, height, width)
-            kps = jj_metrics.normalize_kps(kps, width, height)
+            kps = preprocess_kps(kps)
+            # redundant step
+            # kps = jj_metrics.normalize_kps(kps, width, height)
             jj_metrics.update_metrics(kps)
             cv2.imshow(WINDOW_NAME, frame)
             

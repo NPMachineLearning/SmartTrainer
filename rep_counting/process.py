@@ -139,11 +139,14 @@ def main(vid_path, exercise_name, output_directory):
         cv2.destroyAllWindows()
         
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="Processing exercise video and output config file",
+                                     description="""This program process exercise video and add
+                                     configuration data into config json file.
+                                     """)
     parser.add_argument("--video", help="Path to video file", required=True)
     parser.add_argument("--exercise_name", help="Exercise name to be processed", required=True)
     parser.add_argument("--output_directory", help="Output directory", required=False, default="./smart_trainer_config")
     args = parser.parse_args()
     
     main(args.video, args.exercise_name.lower(), args.output_directory)
-    # main("./gifs/squat.gif","JumpingJack".lower(), "./config/jumpingjack.json")
+    # main("./gifs/squat.gif","JumpingJack".lower())

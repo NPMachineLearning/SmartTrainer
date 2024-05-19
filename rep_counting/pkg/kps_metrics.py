@@ -98,7 +98,7 @@ class KpsMetrics(ABC):
         pass
     
     @abstractmethod
-    def _process_metrics(self, kps, states) -> None:
+    def _process_metrics(self, kps, states, ratio) -> None:
         """
         Processing keypoints into metrics
 
@@ -121,20 +121,22 @@ class KpsMetrics(ABC):
         """
         pass
     
-    def update_metrics(self, kps) -> None:
+    def update_metrics(self, kps, ratio=(1., 1.)) -> None:
         """
         Main process to update metrics and do 
         exercise prepetition counting
 
         Args:
             kps (dict): all keypoints from movenet
+            ratio (tuple, optional): scale for x and y 
+            only for calculate distance on keypoints
 
         Raises:
             Exception: low pass filter fail
         """
         ###
         # process keypoints into metrics
-        self._process_metrics(kps, self.states)
+        self._process_metrics(kps, self.states, ratio)
         
         ###
         # apply low pass filter on metrics
@@ -334,25 +336,6 @@ class KpsMetrics(ABC):
             )
         
         return angle_degree
-
-    @staticmethod
-    def normalize_kps(kps, image_width, image_height):
-        """
-        Normalize keypoints by image width and height
-
-        Args:
-            kps (dict): keypoints
-            image_width (int): image width
-            image_height (int): image height
-
-        Returns:
-            _type_: _description_
-        """
-        for kp in kps:
-            kp[0] /= image_width
-            kp[1] /= image_height
-            
-        return kps
     
     
          
