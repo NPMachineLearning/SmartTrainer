@@ -12,7 +12,7 @@ from rep_counting.movenet.movenet_infer import load_model, predict, preprocess_i
 from rep_counting.pkg.kps_metrics_jumping_jack import KpsMetricsJumpingJack
 
 WINDOW_NAME = "Frame"
-FRAME_DELAY = 1./1. 
+FRAME_DELAY = 1./30.
 
 def plot_singal(track, mean=None, block=True, pause=None, ylim=None, title=""):
     ax = plt.gca()
@@ -28,7 +28,7 @@ def plot_singal(track, mean=None, block=True, pause=None, ylim=None, title=""):
     if pause:
         plt.pause(FRAME_DELAY)
 
-cap = cv2.VideoCapture("./gifs/jumpingjack.gif")
+cap = cv2.VideoCapture("./gifs/jumping-jack2.gif")
 
 try:
     cv2.namedWindow(WINDOW_NAME)
