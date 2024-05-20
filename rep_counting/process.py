@@ -48,8 +48,7 @@ def main(vid_path, exercise_name, output_directory):
                 height, width = input_img.shape[0], input_img.shape[1]
                 input_img = preprocess_input_image(input_img, INPUT_SIZE)
                 kps = predict(input_img, model, input_details, output_details)
-                kps = preprocess_kps(kps, height, width)
-                kps = metrics.normalize_kps(kps, width, height)
+                kps = preprocess_kps(kps)
                 metrics.update_metrics(kps)
                 exercise_state = metrics.get_metrics()
                 for track_name, track_metrics in tracks.items():
@@ -86,7 +85,7 @@ def main(vid_path, exercise_name, output_directory):
             if name.endswith("dist") and np.std(mc)>=0.04:
                 filter_tracks.append(mc)
                 filter_metric_names.append(name)
-            if name.endswith("angle")>=10.:
+            if name.endswith("angle") and np.std(mc)>=10.:
                 filter_tracks.append(mc)
                 filter_metric_names.append(name)
         
