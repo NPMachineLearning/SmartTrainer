@@ -85,15 +85,12 @@ class KpsMetrics(ABC):
         pass
     
     @abstractmethod
-    def _load_config_data(self, config_data) -> dict:
+    def get_exercise_name(self) -> str:
         """
-        Load config data  
-
-        Args:
-            config_data (dict): config data from json file for exercises
+        Get exercise name
 
         Returns:
-            dict: config data for sepcific exercise
+            str: name of this exercise
         """
         pass
     
@@ -228,7 +225,23 @@ class KpsMetrics(ABC):
                        
                 # update repetition count
                 self.reptition_count = rep 
-            
+    
+    def _load_config_data(self, config_data) -> dict:
+        """
+        Load config data  
+
+        Args:
+            config_data (dict): config data from json file for exercises
+
+        Returns:
+            dict: config data for sepcific exercise
+        """
+        exercise_name = self.get_exercise_name()
+        data = config_data.get(exercise_name, None)
+        if data is None:
+            raise Exception(f"{exercise_name} was not found in config file")
+        return data
+                        
     def _low_pass_filter_metrics(self) -> None:
         """
         Low pass filter to smooth signals(metrics)
@@ -323,17 +336,20 @@ class KpsMetrics(ABC):
         kp3 = (kps[kpi3][0], kps[kpi3][1])
         
         # vectors for kp21, kp23
-        kp21 = (kp1[0]-kp2[0], kp1[1]-kp2[1])
-        kp23 = (kp3[0]-kp2[0], kp3[1]-kp2[1])
+        kp21 = [kp1[0]-kp2[0], kp1[1]-kp2[1]]
+        kp23 = [kp3[0]-kp2[0], kp3[1]-kp2[1]]
         
         # magnitude for kp21, kp23
         mag_kp21 = math.sqrt(kp21[0]**2 + kp21[1]**2)
         mag_kp23 = math.sqrt(kp23[0]**2 + kp23[1]**2)
         
         # calculate angle in degree
-        angle_degree = math.degrees(
-            math.acos(np.dot(kp21, kp23)/(mag_kp21 * mag_kp23))
-            )
+        theta = np.dot(kp21, kp23) / (abs(mag_kp21) * abs(mag_kp23))
+        
+        # preven theta out of 1 and -1 range
+        # otherwise acos will throw error
+        theta = min(1, max(theta, -1))
+        angle_degree = math.degrees(math.acos(theta))
         
         return angle_degree
     

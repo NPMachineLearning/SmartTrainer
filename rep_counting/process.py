@@ -14,38 +14,45 @@ import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 from movenet.movenet_infer import load_model, predict, preprocess_input_image, preprocess_kps, INPUT_SIZE
 from pkg.kps_metrics_jumping_jack import KpsMetricsJumpingJack
+from pkg.kps_metrics_push_up import KpsMetricsPushup
 
-WINDOW_NAME = "Frame"
-FRAME_DELAY = 1./30.
+WINDOW_FRAME = "Frame"
+# FRAME_DELAY = 1./30.
+DEFAULT_OUTPUT_DIR = "./smart_trainer_config"
 
 exercise_metrics = {
-    "jumpingjack": KpsMetricsJumpingJack()
+    "jumpingjack": KpsMetricsJumpingJack(),
+    "pushup": KpsMetricsPushup()
 }
 
-def main(vid_path, exercise_name, output_directory):
+def main(vid_path, exercise_name, output_directory=DEFAULT_OUTPUT_DIR):
     if not os.path.exists(vid_path):
         raise Exception(f"{vid_path} doesn't exists")
     if not os.path.isfile(vid_path):
         raise Exception(f"{vid_path} is not a file")
     
     try:
-        cv2.namedWindow(WINDOW_NAME)
-        cv2.moveWindow(WINDOW_NAME, 30, 40)
-        
-        cap = cv2.VideoCapture(vid_path)
-        
+        # load model
         model, input_details, output_details = load_model()
+        
+        # get get metrics object for exercise
         metrics = exercise_metrics.get(exercise_name, None)
         if metrics is None:
             raise Exception(f"Unable to find exercise name {exercise_name}")
+        
+        # track all metrics
         tracks = {e.name: [] for e in metrics.get_metric_names()}
+        
+        cv2.namedWindow(WINDOW_FRAME)
+        cv2.moveWindow(WINDOW_FRAME, 30, 40)
+
+        cap = cv2.VideoCapture(str(vid_path))
             
         while(cap.isOpened()):
             ret, frame = cap.read()
             if ret:
                 input_img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 input_img = tf.convert_to_tensor(input_img)
-                height, width = input_img.shape[0], input_img.shape[1]
                 input_img = preprocess_input_image(input_img, INPUT_SIZE)
                 kps = predict(input_img, model, input_details, output_details)
                 kps = preprocess_kps(kps)
@@ -54,11 +61,11 @@ def main(vid_path, exercise_name, output_directory):
                 for track_name, track_metrics in tracks.items():
                     track_metrics.append(exercise_state[track_name])
                 
-                cv2.imshow(WINDOW_NAME, frame)
+                cv2.imshow(WINDOW_FRAME, frame)
             else:
                 break
             
-            cv2.setWindowTitle(WINDOW_NAME, f"Frame")
+            cv2.setWindowTitle(WINDOW_FRAME, f"{exercise_name}")
                 
             # the 'q' button is set as the 
             # quitting button you may use any 
@@ -67,10 +74,8 @@ def main(vid_path, exercise_name, output_directory):
                 break
             
             # detect the window is closed by user
-            if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
+            if cv2.getWindowProperty(WINDOW_FRAME, cv2.WND_PROP_VISIBLE) < 1:
                 break
-            
-            time.sleep(FRAME_DELAY)
             
         # After the loop release the cap object 
         cap.release() 
@@ -129,6 +134,7 @@ def main(vid_path, exercise_name, output_directory):
                    label=f"mean {statistics['mean']:.2f}")
         plt.ylabel(f"sum of signals per frames")
         plt.xlabel("frames")
+        plt.title(f"{exercise_name} sum of signals")
         plt.legend()
         plt.show()
         
@@ -144,7 +150,7 @@ if __name__ == "__main__":
                                      """)
     parser.add_argument("--video", help="Path to video file", required=True)
     parser.add_argument("--exercise_name", help="Exercise name to be processed", required=True)
-    parser.add_argument("--output_directory", help="Output directory", required=False, default="./smart_trainer_config")
+    parser.add_argument("--output_directory", help="Output directory", required=False, default=DEFAULT_OUTPUT_DIR)
     args = parser.parse_args()
     
     main(args.video, args.exercise_name.lower(), args.output_directory)

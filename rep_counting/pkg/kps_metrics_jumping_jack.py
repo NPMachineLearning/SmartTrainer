@@ -1,7 +1,6 @@
 from .kps_metrics import KpsMetrics
 from .kps_constant import KPS_INDEX_DICT
 from enum import Enum
-import numpy as np
 
 class KpsMetricsJumpingJack(KpsMetrics):
     metric_names = Enum("JumpingJackMetricNames", [
@@ -19,12 +18,9 @@ class KpsMetricsJumpingJack(KpsMetrics):
                          low_pass_filter_alpha=low_pass_filter_alpha,
                          config_path=config_path)
     
-    def _load_config_data(self, config_data) -> dict:
-        data = config_data.get(self.exercise_name, None)
-        if data is None:
-            raise Exception(f"{self.exercise_name} was not found in config file")
-        return data
-    
+    def get_exercise_name(self) -> str:
+        return self. exercise_name.lower()
+        
     def _get_query_pattern(self) -> list[int]:
         return [0, 1, 0]
     
