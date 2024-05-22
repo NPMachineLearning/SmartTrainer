@@ -8,7 +8,7 @@ class VideoSource(QThread):
     onFrame = pyqtSignal(np.ndarray)
     onFinished = pyqtSignal()
     
-    def __init__(self, video_path, frame_per_second=30., size=None):
+    def __init__(self, video_path, frame_per_second=30.):
         super().__init__()
         if not os.path.exists(video_path):
             raise Exception(f"video {video_path} deosn't exists")
@@ -16,13 +16,9 @@ class VideoSource(QThread):
         self.cap = None
         self.exit = False
         self.fps = 1./frame_per_second
-        self.size = size
     
     def stop(self):
         self.exit = True
-    
-    def set_size(self, size):
-        self.size = size
         
     def run(self):
         self.cap = cv2.VideoCapture(self.video_path)
@@ -30,8 +26,6 @@ class VideoSource(QThread):
             now = time.time()
             ret, frame = self.cap.read()
             if ret:
-                if self.size:
-                    frame = cv2.resize(frame, self.size)
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 self.onFrame.emit(frame)
                 time_diff = time.time() - now

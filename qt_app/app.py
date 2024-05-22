@@ -1,5 +1,6 @@
 import sys
 import os
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCloseEvent, QImage, QPixmap
 from PyQt6.QtWidgets import QMainWindow, QApplication, QFileDialog
 from main_window import Ui_MainWindow
@@ -18,6 +19,10 @@ class AppWindow(QMainWindow, Ui_MainWindow):
                                                "Open video",
                                                filter="Video file (*.mp4)")
         if os.path.exists(vid_path):
+            if self.video_source and self.video_source.isRunning():
+                self.video_source.stop()
+                self.video_source.terminate()
+                
             self.video_path = vid_path
             self.video_source = VideoSource(self.video_path,
                                             30.)
@@ -27,15 +32,15 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             self.video_source.start()
             
     def on_frame(self, frame):
+        d_width = self.img_frame.size().width()-5
+        d_height = self.img_frame.size().height()-5
         image = QImage(frame.data, frame.shape[1], frame.shape[0], QImage.Format.Format_RGB888)
+        image = image.scaled(d_width, d_height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.img_frame.setPixmap(QPixmap.fromImage(image))
     
     def on_video_finished(self):
         self.video_source = None
         self.img_frame.setText("video frame")
-        
-    def resizeEvent(self, _):
-        pass
                     
     def closeEvent(self, a0: QCloseEvent | None) -> None:
         # todo: do extra stuff here before app exit
