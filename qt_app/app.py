@@ -6,7 +6,7 @@ from PyQt6.QtGui import QCloseEvent, QImage, QPixmap
 from PyQt6.QtWidgets import QMainWindow, QApplication, QFileDialog
 from main_window import Ui_MainWindow
 from video_source import VideoSource
-from rep_counting.rep_counter import RepetitionCounter
+from rep_counter_wrapper import RepetitionCounterWrapper, RepetitionCounter
 
 NO_VIDEO_SOURCE_MSG = "No video source"
 CONFIG_FILE = './smart_trainer_config/config.json'
@@ -37,7 +37,10 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         self.exercise_list.addItems(list(EXERCISE_METRICS_MAP.keys()))
         self.video_path = None
         self.video_source = None
-        self.rep_counter = RepetitionCounter(MODEL_PATH, CONFIG_FILE)
+        
+        # rep counter wrapper
+        self.rep_counter = RepetitionCounterWrapper(MODEL_PATH, CONFIG_FILE)
+        self.rep_counter.onRepCounterUpdated.connect(self.on_rep_counter_updated)
     
     def open_video(self):
         vid_path, _ = QFileDialog.getOpenFileName(self,
@@ -80,7 +83,11 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             # don't receive signal for new frame
             self.video_source.onFrame.disconnect()
             self.video_source = None
-                
+    
+    def on_rep_counter_updated(self, counter:RepetitionCounter):
+        metric = counter.get_metric(counter.current_metric_name)
+        print(metric.get_exercise_name(), metric.reptition_count)
+                    
     def on_frame(self, frame):
         d_width = self.img_frame.size().width()-5
         d_height = self.img_frame.size().height()-5
@@ -92,8 +99,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         image = image.scaled(d_width, d_height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.img_frame.setPixmap(QPixmap.fromImage(image))
         
-        # update metric
-        self.rep_counter.update_metric(frame)
+        # add frame for processing
+        self.rep_counter.add_frame(frame)
     
     def on_video_finished(self):
         self.video_source = None
@@ -107,6 +114,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
     def on_start_clicked(self):
         if self.video_source and not self.video_source.isRunning():
             self.video_source.start()
+        if self.rep_counter:
+            self.rep_counter.start()
             
     def on_toggle_pause(self):
         if self.video_source and self.video_source.isRunning():
@@ -125,6 +134,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
     def closeEvent(self, a0: QCloseEvent | None) -> None:
         # todo: do extra stuff here before app exit
         self.remove_video_source()
+        if self.rep_counter:
+            self.rep_counter.requestInterruption()
         a0.accept()
 
 if __name__ == "__main__":

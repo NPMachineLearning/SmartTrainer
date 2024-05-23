@@ -28,7 +28,7 @@ class RepetitionCounter:
             raise Exception(f"{exercise_name} is not one of {list_metric_names}")
         self.current_metric_name = exercise_name
     
-    def get_metric(self, exercise_name):
+    def get_metric(self, exercise_name) -> KpsMetrics:
         list_metric_names = list(self.exercise_metrics.keys())
         if not exercise_name in list_metric_names:
             raise Exception(f"{exercise_name} is not one of {list_metric_names}")
