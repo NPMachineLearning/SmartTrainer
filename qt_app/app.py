@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import QMainWindow, QApplication, QFileDialog
 from main_window import Ui_MainWindow
 from video_source import VideoSource
 from rep_counter_wrapper import RepetitionCounterWrapper, RepetitionCounter
+import numpy as np
 
 NO_VIDEO_SOURCE_MSG = "No video source"
 CONFIG_FILE = './smart_trainer_config/config.json'
@@ -60,10 +61,10 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             # render first frame
             first_frame = self.video_source.read_frame()
             if first_frame is not None:
-                self.on_frame(first_frame)
+                self.render_frame(first_frame)
             
             # connect slots    
-            self.video_source.onFrame.connect(self.on_frame)
+            self.video_source.onFrame.connect(self.on_video_frame)
             self.video_source.onFinished.connect(self.on_video_finished)
             self.video_source.onInterrupted.connect(self.on_interrupted)
             self.video_source.finished.connect(self.video_source.deleteLater)
@@ -84,11 +85,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             self.video_source.onFrame.disconnect()
             self.video_source = None
     
-    def on_rep_counter_updated(self, counter:RepetitionCounter):
-        metric = counter.get_metric(counter.current_metric_name)
-        print(metric.get_exercise_name(), metric.reptition_count)
-                    
-    def on_frame(self, frame):
+    def render_frame(self, frame):
         d_width = self.img_frame.size().width()-5
         d_height = self.img_frame.size().height()-5
         
@@ -99,9 +96,15 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         image = image.scaled(d_width, d_height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.img_frame.setPixmap(QPixmap.fromImage(image))
         
+    def on_rep_counter_updated(self, counter:RepetitionCounter, frame:np.ndarray):
+        metric = counter.get_metric(counter.current_metric_name)
+        print(metric.get_exercise_name(), metric.reptition_count)
+        self.render_frame(frame)
+                    
+    def on_video_frame(self, frame):
         # add frame for processing
         self.rep_counter.add_frame(frame)
-    
+        
     def on_video_finished(self):
         self.video_source = None
         self.img_frame.setText(NO_VIDEO_SOURCE_MSG)
