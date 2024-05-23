@@ -118,16 +118,6 @@
           <property name="frameShape">
            <enum>QFrame::Panel</enum>
           </property>
-          <item>
-           <property name="text">
-            <string>Pushups</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>JumpingJacks</string>
-           </property>
-          </item>
          </widget>
         </item>
         <item>

@@ -1,13 +1,21 @@
 import sys
 import os
-import time
+sys.path.insert(0, os.getcwd())
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCloseEvent, QImage, QPixmap
 from PyQt6.QtWidgets import QMainWindow, QApplication, QFileDialog
 from main_window import Ui_MainWindow
 from video_source import VideoSource
+from rep_counting.rep_counter import RepetitionCounter
 
 NO_VIDEO_SOURCE_MSG = "No video source"
+CONFIG_FILE = './smart_trainer_config/config.json'
+MODEL_PATH = './rep_counting/movenet/movenet_singlepose_thunder_3.tflite'
+
+EXERCISE_METRICS_MAP = {
+    "Jumping jacks": "jumping_jacks",
+    "Push ups": "push_ups",
+}
 
 class AppWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
@@ -26,8 +34,10 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         
         # init variables
         self.img_frame.setText(NO_VIDEO_SOURCE_MSG)
+        self.exercise_list.addItems(list(EXERCISE_METRICS_MAP.keys()))
         self.video_path = None
         self.video_source = None
+        self.rep_counter = RepetitionCounter(MODEL_PATH, CONFIG_FILE)
     
     def open_video(self):
         vid_path, _ = QFileDialog.getOpenFileName(self,
@@ -81,6 +91,9 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         # scale image
         image = image.scaled(d_width, d_height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.img_frame.setPixmap(QPixmap.fromImage(image))
+        
+        # update metric
+        self.rep_counter.update_metric(frame)
     
     def on_video_finished(self):
         self.video_source = None
@@ -105,6 +118,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
                 self.toggle_pause_button.setText("Resume")
     
     def on_exercise_changed(self, current, previous):
+        exercise_name = current.text()
+        self.rep_counter.set_metric(EXERCISE_METRICS_MAP[exercise_name])
         self.current_exercise_label.setText(current.text())
                     
     def closeEvent(self, a0: QCloseEvent | None) -> None:
