@@ -14,6 +14,9 @@ class RepetitionCounterWrapper(QThread):
     def set_metric(self, name):
         self.rep_counter.set_metric(name)
         
+    def reset_metrics(self):
+        self.rep_counter.reset_metrics()
+        
     def add_frame(self, frame):
         self.queue_frame.append(frame)
              

@@ -8,6 +8,9 @@ from main_window import Ui_MainWindow
 from video_source import VideoSource
 from rep_counter_wrapper import RepetitionCounterWrapper, RepetitionCounter
 import numpy as np
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
+from rep_counting.pkg.kps_metrics import KpsMetrics
 
 NO_VIDEO_SOURCE_MSG = "No video source"
 CONFIG_FILE = './smart_trainer_config/config.json'
@@ -22,6 +25,15 @@ class AppWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
+        
+        # create signal plot
+        dynamic_canvas = FigureCanvasQTAgg(Figure(figsize=(10, 2)))
+        self.plotLayout.addWidget(dynamic_canvas)
+        self.dynamic_ax = dynamic_canvas.figure.subplots()
+        self.dynamic_ax.set_xlabel("Frames", loc="left")
+        self.dynamic_ax.set_ylabel("Signal")
+        self.dynamic_ax.set_title("Exercise signals")
+        self.metric_plot = self.dynamic_ax.plot([], [], 'b-')[0]
         
         # connect slots
         self.action_open_video.triggered.connect(self.open_video)
@@ -86,6 +98,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             self.video_source = None
     
     def render_frame(self, frame):
+        # get widget width and height
         d_width = self.img_frame.size().width()-5
         d_height = self.img_frame.size().height()-5
         
@@ -94,15 +107,53 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         
         # scale image
         image = image.scaled(d_width, d_height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        
+        # display frame
         self.img_frame.setPixmap(QPixmap.fromImage(image))
+    
+    def update_metric_plot(self, metric:KpsMetrics):
+        t_frame = list(range(len(metric.tracked_metrics)))
+        
+        # update signal plot data
+        self.metric_plot.set_data(t_frame, 
+                                  metric.tracked_metrics)
+        
+        # get metric's mean
+        mean = metric.config['reference']['mean']
+        
+        # if axes contain more than 2 artists
+        # remove last one since last one is horizontal
+        # line for mean 
+        if len(self.dynamic_ax.lines) >= 2:
+            self.dynamic_ax.lines[-1].remove()
+        
+        # add horizontal line for mean
+        self.dynamic_ax.axhline(mean, 0, len(t_frame), color='r')
+        
+        # recalculate limit
+        self.dynamic_ax.relim()
+        
+        # auto scale axes
+        self.dynamic_ax.autoscale_view(True, True, True)
+        
+        # redraw
+        self.metric_plot.figure.canvas.draw()
         
     def on_rep_counter_updated(self, counter:RepetitionCounter, frame:np.ndarray):
+        # get metric
         metric = counter.get_metric(counter.current_metric_name)
-        print(metric.get_exercise_name(), metric.reptition_count)
+        
+        # update repetition count for label
+        self.rep_count_label.setText(str(metric.reptition_count))
+        
+        # display frame
         self.render_frame(frame)
+        
+        # update signal plot
+        self.update_metric_plot(metric)
                     
     def on_video_frame(self, frame):
-        # add frame for processing
+        # add frame for repetition counter processing
         self.rep_counter.add_frame(frame)
         
     def on_video_finished(self):
@@ -118,6 +169,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         if self.video_source and not self.video_source.isRunning():
             self.video_source.start()
         if self.rep_counter:
+            self.rep_count_label.setText("0")
+            self.rep_counter.reset_metrics()
             self.rep_counter.start()
             
     def on_toggle_pause(self):
@@ -132,7 +185,6 @@ class AppWindow(QMainWindow, Ui_MainWindow):
     def on_exercise_changed(self, current, previous):
         exercise_name = current.text()
         self.rep_counter.set_metric(EXERCISE_METRICS_MAP[exercise_name])
-        self.current_exercise_label.setText(current.text())
                     
     def closeEvent(self, a0: QCloseEvent | None) -> None:
         # todo: do extra stuff here before app exit

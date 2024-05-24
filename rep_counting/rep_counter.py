@@ -34,6 +34,9 @@ class RepetitionCounter:
             raise Exception(f"{exercise_name} is not one of {list_metric_names}")
         return self.exercise_metrics[exercise_name]
     
+    def reset_metrics(self):
+        self.exercise_metrics = self._load_exercise_metrics(self.config_path)
+        
     def update_metric(self, cv_frame):
         if self.current_metric_name is None:
             raise Exception("call set_metric method at least once to set current metric name")
@@ -44,5 +47,4 @@ class RepetitionCounter:
         kps = preprocess_kps(kps)
         metric = self.exercise_metrics[self.current_metric_name]
         metric.update_metrics(kps)
-        print(metric.get_exercise_name(), metric.reptition_count)
         
