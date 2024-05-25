@@ -201,11 +201,10 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         self._prepare_video()
                 
     def on_start_clicked(self):
-        self.rep_count_label.setText("0")
-        self.rep_counter.reset_metrics()
-        
         # start last video in queue if it is not running
         if len(self.video_queue) and not self.video_queue[-1].isRunning():
+            self.rep_count_label.setText("0")
+            self.rep_counter.reset_metrics()
             self.video_queue[-1].start()
             
     def on_toggle_pause(self):
