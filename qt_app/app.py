@@ -61,6 +61,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         self.img_frame.setText(NO_VIDEO_SOURCE_MSG)
         self.exercise_list.addItems(list(EXERCISE_METRICS_MAP.keys()))
         self.video_path = None
+        self.current_exercise_name = ''
         
         # video queue
         self.video_queue:list[VideoRepetitionCounter] = []
@@ -160,6 +161,9 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         # line for mean 
         if len(self.dynamic_ax.lines) >= 2:
             self.dynamic_ax.lines[-1].remove()
+            
+        # update title
+        self.dynamic_ax.set_title(f"{self.current_exercise_name} signals")
         
         # add horizontal line for mean
         self.dynamic_ax.axhline(mean, 0, len(t_frame), color='r')
@@ -218,8 +222,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
                 self.toggle_pause_button.setText("Resume")
     
     def on_exercise_changed(self, current, previous):
-        exercise_name = current.text()
-        self.rep_counter.set_metric(EXERCISE_METRICS_MAP[exercise_name])
+        self.current_exercise_name = current.text()
+        self.rep_counter.set_metric(EXERCISE_METRICS_MAP[self.current_exercise_name])
                     
     def closeEvent(self, a0: QCloseEvent | None) -> None:
         if len(self.video_queue):
