@@ -1,16 +1,28 @@
 import sys
 import os
 sys.path.insert(0, os.getcwd())
-from PyQt6.QtCore import Qt
+
+# Numpy
+import numpy as np
+
+# Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QImage, QPixmap
 from PyQt6.QtWidgets import QMainWindow, QApplication, QFileDialog
+
+# Qt UI
 from main_window import Ui_MainWindow
-from video_source import VideoSource
-from rep_counter_wrapper import RepetitionCounterWrapper, RepetitionCounter
-import numpy as np
+
+# matplotlib
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+
+from qt_app.video_rep_counter import VideoRepetitionCounter
+
+# Repetition counter
 from rep_counting.pkg.kps_metrics import KpsMetrics
+from rep_counting.rep_counter import RepetitionCounter
+
 
 NO_VIDEO_SOURCE_MSG = "No video source"
 CONFIG_FILE = './smart_trainer_config/config.json'
@@ -26,7 +38,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         super().__init__(parent)
         self.setupUi(self)
         
-        # create signal plot
+        # create signal/metric plot
         dynamic_canvas = FigureCanvasQTAgg(Figure(figsize=(10, 2)))
         self.plotLayout.addWidget(dynamic_canvas)
         self.dynamic_ax = dynamic_canvas.figure.subplots()
@@ -36,7 +48,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         self.metric_plot = self.dynamic_ax.plot([], [], 'b-')[0]
         
         # connect slots
-        self.action_open_video.triggered.connect(self.open_video)
+        self.action_open_video.triggered.connect(self.on_open_video)
         self.start_button.clicked.connect(self.on_start_clicked)
         self.toggle_pause_button.clicked.connect(self.on_toggle_pause)
         self.exercise_list.currentItemChanged.connect(self.on_exercise_changed)
@@ -49,13 +61,14 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         self.img_frame.setText(NO_VIDEO_SOURCE_MSG)
         self.exercise_list.addItems(list(EXERCISE_METRICS_MAP.keys()))
         self.video_path = None
-        self.video_source = None
         
-        # rep counter wrapper
-        self.rep_counter = RepetitionCounterWrapper(MODEL_PATH, CONFIG_FILE)
-        self.rep_counter.onRepCounterUpdated.connect(self.on_rep_counter_updated)
+        # video queue
+        self.video_queue:list[VideoRepetitionCounter] = []
+        
+        # create repetition counter 
+        self.rep_counter = RepetitionCounter(MODEL_PATH, CONFIG_FILE)
     
-    def open_video(self):
+    def on_open_video(self):
         vid_path, _ = QFileDialog.getOpenFileName(self,
                                                "Open video",
                                                filter="Video file (*.mp4)")
@@ -64,40 +77,61 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             # set video path
             self.video_path = vid_path
             
-            # remove current video source
-            self.remove_video_source()
+            # cancel current video
+            if len(self.video_queue):
+                self._cancel_current_video(self.video_queue[-1])
+        
+            # create a video repetition counter
+            counter = self._create_video_rep_counter(self.rep_counter)
             
-            # create new video source
-            self.video_source = VideoSource(self.video_path, 30.)
+            # only prepare video when there is no video in queue
+            # otherwise prepare video will be called within
+            # previous video complete/interrupt event
+            should_prepare = not len(self.video_queue)
             
-            # render first frame
-            first_frame = self.video_source.read_frame()
-            if first_frame is not None:
-                self.render_frame(first_frame)
+            # add video to queue
+            self.video_queue.append(counter)
             
-            # connect slots    
-            self.video_source.onFrame.connect(self.on_video_frame)
-            self.video_source.onFinished.connect(self.on_video_finished)
-            self.video_source.onInterrupted.connect(self.on_interrupted)
-            self.video_source.finished.connect(self.video_source.deleteLater)
+            if should_prepare:
+                self._prepare_video()
             
-            # enable buttons
-            self.start_button.setEnabled(True)
-            self.toggle_pause_button.setEnabled(True)
-            
-    def remove_video_source(self):
-        if self.video_source and self.video_source.isRunning():
+    def _cancel_current_video(self, v_rep_counter:VideoRepetitionCounter):
+        if v_rep_counter and v_rep_counter.isRunning():
             # make sure video source is in playing state
-            self.video_source.resume()
+            # otherwise thread thread will be locked
+            # in waiting state
+            v_rep_counter.resume()
             
             # tell video source to stop
-            self.video_source.requestInterruption()
-            
-            # don't receive signal for new frame
-            self.video_source.onFrame.disconnect()
-            self.video_source = None
+            v_rep_counter.requestInterruption()
     
-    def render_frame(self, frame):
+    def _create_video_rep_counter(self, rep_counter:RepetitionCounter):
+        # create new video repetition counter
+        counter = VideoRepetitionCounter(self.video_path, rep_counter, 30.)
+        
+        # connect slots    
+        counter.onRepCount.connect(self.on_rep_count)
+        counter.onInterrupted.connect(self.on_interrupted)
+        counter.onCompleted.connect(self.on_video_completed)
+        counter.finished.connect(counter.deleteLater)
+        
+        return counter
+    
+    def _prepare_video(self):
+        if len(self.video_queue):
+            # render first frame of video in last video queue
+            video = self.video_queue[-1]
+            first_frame = video.read_frame()
+            if first_frame is not None:
+                self._render_frame(first_frame)
+                
+            self.start_button.setEnabled(True)
+            self.toggle_pause_button.setEnabled(True)
+        else:
+            self.start_button.setEnabled(False)
+            self.toggle_pause_button.setEnabled(False)
+                
+    def _render_frame(self, frame):
         # get widget width and height
         d_width = self.img_frame.size().width()-5
         d_height = self.img_frame.size().height()-5
@@ -111,7 +145,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         # display frame
         self.img_frame.setPixmap(QPixmap.fromImage(image))
     
-    def update_metric_plot(self, metric:KpsMetrics):
+    def _update_metric_plot(self, metric:KpsMetrics):
         t_frame = list(range(len(metric.tracked_metrics)))
         
         # update signal plot data
@@ -130,7 +164,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         # add horizontal line for mean
         self.dynamic_ax.axhline(mean, 0, len(t_frame), color='r')
         
-        # recalculate limit
+        # recalculate limit for plot
         self.dynamic_ax.relim()
         
         # auto scale axes
@@ -138,8 +172,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         
         # redraw
         self.metric_plot.figure.canvas.draw()
-        
-    def on_rep_counter_updated(self, counter:RepetitionCounter, frame:np.ndarray):
+    
+    def on_rep_count(self, frame:np.ndarray, counter:RepetitionCounter):
         # get metric
         metric = counter.get_metric(counter.current_metric_name)
         
@@ -147,39 +181,41 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         self.rep_count_label.setText(str(metric.reptition_count))
         
         # display frame
-        self.render_frame(frame)
+        self._render_frame(frame)
         
         # update signal plot
-        self.update_metric_plot(metric)
-                    
-    def on_video_frame(self, frame):
-        # add frame for repetition counter processing
-        self.rep_counter.add_frame(frame)
+        self._update_metric_plot(metric)
+            
+    def on_video_completed(self):
+        # pop first video from queue
+        self.video_queue.pop(0)
         
-    def on_video_finished(self):
-        self.video_source = None
-        self.img_frame.setText(NO_VIDEO_SOURCE_MSG)
-        self.start_button.setEnabled(False)
-        self.toggle_pause_button.setEnabled(False)
+        # prepare next queued video
+        self._prepare_video()
         
     def on_interrupted(self):
-        print("Video source interrupted")
+        # pop first video from queue
+        self.video_queue.pop(0)
         
+        # prepare next queued video
+        self._prepare_video()
+                
     def on_start_clicked(self):
-        if self.video_source and not self.video_source.isRunning():
-            self.video_source.start()
-        if self.rep_counter:
-            self.rep_count_label.setText("0")
-            self.rep_counter.reset_metrics()
-            self.rep_counter.start()
+        self.rep_count_label.setText("0")
+        self.rep_counter.reset_metrics()
+        
+        # start last video in queue if it is not running
+        if len(self.video_queue) and not self.video_queue[-1].isRunning():
+            self.video_queue[-1].start()
             
     def on_toggle_pause(self):
-        if self.video_source and self.video_source.isRunning():
-            if self.video_source.is_paused():
-                self.video_source.resume()
+        if len(self.video_queue) and self.video_queue[-1].isRunning():
+            video = self.video_queue[-1]
+            if video.is_paused():
+                video.resume()
                 self.toggle_pause_button.setText("Pause")
             else:
-                self.video_source.pause()
+                video.pause()
                 self.toggle_pause_button.setText("Resume")
     
     def on_exercise_changed(self, current, previous):
@@ -187,10 +223,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         self.rep_counter.set_metric(EXERCISE_METRICS_MAP[exercise_name])
                     
     def closeEvent(self, a0: QCloseEvent | None) -> None:
-        # todo: do extra stuff here before app exit
-        self.remove_video_source()
-        if self.rep_counter:
-            self.rep_counter.requestInterruption()
+        if len(self.video_queue):
+            self._cancel_current_video(self.video_queue[-1])
         a0.accept()
 
 if __name__ == "__main__":
