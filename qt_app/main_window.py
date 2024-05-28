@@ -191,7 +191,13 @@ class Ui_MainWindow(object):
         font.setPointSize(14)
         self.action_open_video.setFont(font)
         self.action_open_video.setObjectName("action_open_video")
+        self.action_camera_source = QtGui.QAction(parent=MainWindow)
+        font = QtGui.QFont()
+        font.setPointSize(14)
+        self.action_camera_source.setFont(font)
+        self.action_camera_source.setObjectName("action_camera_source")
         self.menuFile.addAction(self.action_open_video)
+        self.menuFile.addAction(self.action_camera_source)
         self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(MainWindow)
@@ -208,3 +214,4 @@ class Ui_MainWindow(object):
         self.rep_count_label.setText(_translate("MainWindow", "0"))
         self.menuFile.setTitle(_translate("MainWindow", "&Video Source"))
         self.action_open_video.setText(_translate("MainWindow", "Video clip"))
+        self.action_camera_source.setText(_translate("MainWindow", "Camera"))

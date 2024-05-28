@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import QMainWindow, QApplication, QFileDialog
 
 # Qt UI
 from main_window import Ui_MainWindow
+from camera_selector_dialog import CameraSourceSelectorDialog
 
 # matplotlib
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
@@ -49,6 +50,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         
         # connect slots
         self.action_open_video.triggered.connect(self.on_open_video)
+        self.action_camera_source.triggered.connect(self.on_camera_source)
         self.start_button.clicked.connect(self.on_start_clicked)
         self.toggle_pause_button.clicked.connect(self.on_toggle_pause)
         self.exercise_list.currentItemChanged.connect(self.on_exercise_changed)
@@ -62,13 +64,20 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         self.exercise_list.addItems(list(EXERCISE_METRICS_MAP.keys()))
         self.video_path = None
         self.current_exercise_name = ''
+        self.camera_selector_dialog = None
         
         # video queue
         self.video_queue:list[VideoRepetitionCounter] = []
         
         # create repetition counter 
         self.rep_counter = RepetitionCounter(MODEL_PATH, CONFIG_FILE)
-    
+        
+    def on_camera_source(self):
+        # show dialog
+        self.camera_selector_dialog = CameraSourceSelectorDialog(self)
+        self.camera_selector_dialog.show()
+        self.camera_selector_dialog.find_camera_source()
+        
     def on_open_video(self):
         vid_path, _ = QFileDialog.getOpenFileName(self,
                                                "Open video",

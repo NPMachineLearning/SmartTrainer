@@ -299,6 +299,7 @@
      <string>&amp;Video Source</string>
     </property>
     <addaction name="action_open_video"/>
+    <addaction name="action_camera_source"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -306,6 +307,16 @@
   <action name="action_open_video">
    <property name="text">
     <string>Video clip</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+  </action>
+  <action name="action_camera_source">
+   <property name="text">
+    <string>Camera</string>
    </property>
    <property name="font">
     <font>
