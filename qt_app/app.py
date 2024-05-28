@@ -117,7 +117,9 @@ class AppWindow(QMainWindow, Ui_MainWindow):
     
     def _create_video_rep_counter(self, rep_counter:RepetitionCounter):
         # create new video repetition counter
-        counter = VideoRepetitionCounter(self.video_path, rep_counter, 30.)
+        counter = VideoRepetitionCounter(video_path=self.video_path, 
+                                         rep_counter=rep_counter, 
+                                         frame_per_second=30.)
         
         # connect slots    
         counter.onRepCount.connect(self.on_rep_count)
