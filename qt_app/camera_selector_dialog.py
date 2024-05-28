@@ -35,12 +35,7 @@ class CameraSourceSelectorDialog(QDialog, Ui_Dialog):
             self.camera_source_list.setCurrentItem(selected_item)
     
     def start_preview(self, source):
-        self.preview_vid_source = VideoSource(source, 
-                                              VideoSource.SourceType.Camera, 
-                                              video_capture_api=cv2.CAP_V4L2)
-        self.preview_vid_source.onFrame.connect(self.on_frame)
-        self.preview_vid_source.onReadFrameFail.connect(self.on_read_frame_fail)
-        self.preview_vid_source.start()
+        pass
     
     def release_resource(self):
         if self.preview_vid_source:

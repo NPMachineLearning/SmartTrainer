@@ -116,12 +116,15 @@ class VideoSource(QThread):
         pass        
             
     def run(self):
-        ##
-        # Thread main loop
+        if self.source_type.value == self.SourceType.VideoFile.value:
+            self.video_clip_loop()
+        elif self.source_type.value == self.SourceType.Camera.value:
+            pass
+
+    def video_clip_loop(self):
         try:
             # set frame position at beginning
-            if self.source_type.value == self.SourceType.VideoFile.value:
-                self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
             
             if not self.cap.isOpened():
                 warnings.warn(f"Video source:{self.video_path}, Type:{self.source_type.name} can't be opend")
@@ -164,5 +167,5 @@ class VideoSource(QThread):
             self.onInterrupted()
             raise e
         finally:
-            self.cap.release()  
+            self.cap.release()    
         
