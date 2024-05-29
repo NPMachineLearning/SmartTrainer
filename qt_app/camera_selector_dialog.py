@@ -48,9 +48,6 @@ class CameraSourceSelectorDialog(QDialog, Ui_Dialog):
         self.cam_source.onFrame.connect(self.on_frame)
         self.cam_source.onVideoSourceFail.connect(self.on_camera_fail)
         self.cam_source.start()
-        
-        self.status_label.setText(f"Camera streaming at device port {self.cam_source.video_path}")
-        self.status_label.setStyleSheet("color: rgb(0, 0, 0);")
     
     def release_resource(self):
         if self.cam_source:
@@ -77,15 +74,14 @@ class CameraSourceSelectorDialog(QDialog, Ui_Dialog):
     def on_read_frame_fail(self, frame):
         self.current_camera_avaliable = False
         
-        self.on_frame(frame)
-        self.status_label.setText(f"Unable to open camera at device port {self.cam_source.video_path}")
-        self.status_label.setStyleSheet("color: rgb(255, 0, 0);")
+        self.preview_cam_img.setText(f"Unable to stream at camera device port {self.cam_source.video_path}")
+        self.preview_cam_img.setStyleSheet("color: rgb(255, 0, 0);")
         
     def on_camera_fail(self):
         self.current_camera_avaliable = False
         
-        self.status_label.setText(f"Unable to open camera at device port {self.cam_source.video_path}")
-        self.status_label.setStyleSheet("color: rgb(255, 0, 0);")
+        self.preview_cam_img.setText(f"Unable to open camera at device port {self.cam_source.video_path}")
+        self.preview_cam_img.setStyleSheet("color: rgb(255, 0, 0);")
                    
     def on_accepted(self):
         if self.current_camera_avaliable:

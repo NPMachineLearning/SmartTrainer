@@ -34,3 +34,7 @@ we need to manually define measurement for particular exercise or action.
 ### Low pass filter
 
 - [Low pass filter](https://dobrian.github.io/cmp/topics/filters/lowpassfilter.html)
+
+### Camera streaming on Linux
+
+- [linuxpy](https://github.com/tiagocoutinho/linuxpy)
