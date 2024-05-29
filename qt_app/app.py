@@ -86,7 +86,16 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             self._cancel_current_video(self.video_queue[-1])
             
         counter = self._create_camera_rep_counter(cam_port, self.rep_counter)
+        
+        # only prepare video when there is no video in queue
+        # otherwise prepare video will be called within
+        # previous video complete/interrupt event
+        should_prepare = not len(self.video_queue)
+            
         self.video_queue.append(counter)
+        
+        if should_prepare:
+            self._prepare_video()
         
     def on_open_video(self):
         vid_path, _ = QFileDialog.getOpenFileName(self,
@@ -124,6 +133,12 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             
             # tell video source to stop
             v_rep_counter.requestInterruption()
+        else:
+            # pop first video from queue
+            self.video_queue.pop(0)
+            
+            # prepare next queued video
+            self._prepare_video()
     
     def _create_video_rep_counter(self, rep_counter:RepetitionCounter):
         # create new video repetition counter
@@ -156,8 +171,12 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             # render first frame of video in last video queue
             video = self.video_queue[-1]
             first_frame = video.read_frame()
+            
+            # if no frame then it is camera stream
             if first_frame is not None:
                 self._render_frame(first_frame)
+            else:
+                self.img_frame.setText("Click start to start camera streaming")
                 
             self.start_button.setEnabled(True)
             self.toggle_pause_button.setEnabled(True)
