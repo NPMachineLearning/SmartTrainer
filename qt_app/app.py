@@ -85,8 +85,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         if len(self.video_queue):
             self._cancel_current_video(self.video_queue[-1])
             
-        counter = self._create_camera_rep_counter(int(cam_port), self.rep_counter)
-        
+        counter = self._create_camera_rep_counter(cam_port, self.rep_counter)
+        self.video_queue.append(counter)
         
     def on_open_video(self):
         vid_path, _ = QFileDialog.getOpenFileName(self,
@@ -124,8 +124,6 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             
             # tell video source to stop
             v_rep_counter.requestInterruption()
-            
-            v_rep_counter.onFrame.disconnect()
     
     def _create_video_rep_counter(self, rep_counter:RepetitionCounter):
         # create new video repetition counter
@@ -142,7 +140,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         return counter
     
     def _create_camera_rep_counter(self, camera_device_port:str, rep_counter:RepetitionCounter):
-        counter = VideoRepetitionCounter(video_path=camera_device_port, 
+        counter = VideoRepetitionCounter(video_path=camera_device_port,
+                                         source_type=VideoRepetitionCounter.SourceType.Camera, 
                                          rep_counter=rep_counter, 
                                          frame_per_second=30.)
         counter.onRepCount.connect(self.on_rep_count)

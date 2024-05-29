@@ -203,7 +203,12 @@ class VideoSource(QThread):
                 # wait until next frame
                 time_diff = time.time() - now
                 if time_diff < self.fps:
-                    time.sleep(self.fps - time_diff)  
+                    time.sleep(self.fps - time_diff)
+            
+            if self.isInterruptionRequested():
+                self.onInterrupted.emit()
+            else:
+                self.onCompleted.emit()     
         except:
             self.onVideoSourceFail.emit()
         finally:
