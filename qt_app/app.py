@@ -50,7 +50,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         
         # connect slots
         self.action_open_video.triggered.connect(self.on_open_video)
-        self.action_camera_source.triggered.connect(self.on_camera_source)
+        self.action_camera_source.triggered.connect(self.on_open_camera)
         self.start_button.clicked.connect(self.on_start_clicked)
         self.toggle_pause_button.clicked.connect(self.on_toggle_pause)
         self.exercise_list.currentItemChanged.connect(self.on_exercise_changed)
@@ -72,11 +72,21 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         # create repetition counter 
         self.rep_counter = RepetitionCounter(MODEL_PATH, CONFIG_FILE)
         
-    def on_camera_source(self):
+    def on_open_camera(self):
         # show dialog
         self.camera_selector_dialog = CameraSourceSelectorDialog(self)
+        self.camera_selector_dialog.onCameraSelected.connect(self.on_camera_selected)
         self.camera_selector_dialog.show()
         self.camera_selector_dialog.find_camera_source()
+        
+    def on_camera_selected(self, cam_port):
+        self.video_path = cam_port
+        
+        if len(self.video_queue):
+            self._cancel_current_video(self.video_queue[-1])
+            
+        counter = self._create_camera_rep_counter(int(cam_port), self.rep_counter)
+        
         
     def on_open_video(self):
         vid_path, _ = QFileDialog.getOpenFileName(self,
@@ -114,6 +124,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             
             # tell video source to stop
             v_rep_counter.requestInterruption()
+            
+            v_rep_counter.onFrame.disconnect()
     
     def _create_video_rep_counter(self, rep_counter:RepetitionCounter):
         # create new video repetition counter
@@ -122,6 +134,17 @@ class AppWindow(QMainWindow, Ui_MainWindow):
                                          frame_per_second=30.)
         
         # connect slots    
+        counter.onRepCount.connect(self.on_rep_count)
+        counter.onInterrupted.connect(self.on_interrupted)
+        counter.onCompleted.connect(self.on_video_completed)
+        counter.finished.connect(counter.deleteLater)
+        
+        return counter
+    
+    def _create_camera_rep_counter(self, camera_device_port:str, rep_counter:RepetitionCounter):
+        counter = VideoRepetitionCounter(video_path=camera_device_port, 
+                                         rep_counter=rep_counter, 
+                                         frame_per_second=30.)
         counter.onRepCount.connect(self.on_rep_count)
         counter.onInterrupted.connect(self.on_interrupted)
         counter.onCompleted.connect(self.on_video_completed)

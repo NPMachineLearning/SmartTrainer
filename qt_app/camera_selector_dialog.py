@@ -1,11 +1,15 @@
 
 from PyQt6.QtWidgets import QDialog, QListWidgetItem
+from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtCore import Qt, pyqtSignal
 from dialog_camera_source import Ui_Dialog
 import cv2
 import warnings
 from video_source import VideoSource
 
 class CameraSourceSelectorDialog(QDialog, Ui_Dialog):
+    onCameraSelected = pyqtSignal(str)
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
@@ -15,11 +19,12 @@ class CameraSourceSelectorDialog(QDialog, Ui_Dialog):
         self.buttonBox.rejected.connect(self.on_rejected)
         
         self.selected_camera_port = None
-        self.preview_vid_source:VideoSource = None
+        self.cam_source:VideoSource = None
+        self.current_camera_avaliable = False
         
-    def find_camera_source(self):
+    def find_camera_source(self, device_port_range:int=5):
         cam_port_list = []
-        for port in range(5):
+        for port in range(device_port_range):
             try:
                 cap = cv2.VideoCapture(port)
                 if cap.isOpened():
@@ -35,28 +40,62 @@ class CameraSourceSelectorDialog(QDialog, Ui_Dialog):
             self.camera_source_list.setCurrentItem(selected_item)
     
     def start_preview(self, source):
-        pass
+        if self.cam_source and self.cam_source.isRunning():
+            self.cam_source.requestInterruption()
+            self.cam_source.onFrame.disconnect()
+            
+        self.cam_source = VideoSource(source, VideoSource.SourceType.Camera)
+        self.cam_source.onFrame.connect(self.on_frame)
+        self.cam_source.onVideoSourceFail.connect(self.on_camera_fail)
+        self.cam_source.start()
+        
+        self.status_label.setText(f"Camera streaming at device port {self.cam_source.video_path}")
+        self.status_label.setStyleSheet("color: rgb(0, 0, 0);")
     
     def release_resource(self):
-        if self.preview_vid_source:
-            if self.preview_vid_source.isRunning():
-                self.preview_vid_source.resume()
-                self.preview_vid_source.requestInterruption()
+        if self.cam_source:
+            if self.cam_source.isRunning():
+                self.cam_source.resume()
+                self.cam_source.requestInterruption()
                 
     def on_frame(self, frame):
-        print(frame.shape)
+        self.current_camera_avaliable = True
+        
+         # get widget width and height
+        d_width = self.preview_cam_img.size().width()-5
+        d_height = self.preview_cam_img.size().height()-5
+        
+        # create qt image
+        image = QImage(frame.data, frame.shape[1], frame.shape[0], QImage.Format.Format_RGB888)
+        
+        # scale image
+        image = image.scaled(d_width, d_height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        
+        # display frame
+        self.preview_cam_img.setPixmap(QPixmap.fromImage(image))
         
     def on_read_frame_fail(self, frame):
-        print("unable to read frame")
+        self.current_camera_avaliable = False
+        
+        self.on_frame(frame)
+        self.status_label.setText(f"Unable to open camera at device port {self.cam_source.video_path}")
+        self.status_label.setStyleSheet("color: rgb(255, 0, 0);")
+        
+    def on_camera_fail(self):
+        self.current_camera_avaliable = False
+        
+        self.status_label.setText(f"Unable to open camera at device port {self.cam_source.video_path}")
+        self.status_label.setStyleSheet("color: rgb(255, 0, 0);")
                    
     def on_accepted(self):
+        if self.current_camera_avaliable:
+            self.onCameraSelected.emit(self.cam_source.video_path)
         self.release_resource()
     
     def on_rejected(self):
         self.release_resource()
     
     def on_camera_source_changed(self, current:QListWidgetItem, previous:QListWidgetItem):
-        print(f"selected camera port {current.text()}")
         self.selected_camera_port = current.text()
         self.start_preview(self.selected_camera_port)
     
