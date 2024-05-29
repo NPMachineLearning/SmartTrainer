@@ -1,6 +1,7 @@
 imageio==2.34.1
-matplotlib==3.8.4
+linuxpy==0.10.0
+matplotlib==3.9.0
 numpy==1.26.4
 pygifsicle==1.0.7
+PyQt6==6.7.0
 tensorflow==2.16.1
-tensorflow_hub==0.16.1
