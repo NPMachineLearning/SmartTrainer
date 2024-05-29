@@ -71,8 +71,13 @@ class VideoSource(QThread):
             self.video_path = video_path
         else:
             raise Exception(f"Unknow source type {self.source_type}")
+        
+        if self.source_type.value == self.SourceType.VideoFile.value:
+            video_fps = self.video_clip_cap.get(cv2.CAP_PROP_FPS)
+            self.fps = 1. / video_fps
+        else:    
+            self.fps = 1./frame_per_second
             
-        self.fps = 1./frame_per_second
         self.paused = False
         self.cond = QWaitCondition()
         self.sync = QMutex()
@@ -235,14 +240,12 @@ class VideoSource(QThread):
 
     def cv_video_capture_loop(self, video_cap:cv2.VideoCapture):
         """
-        Base on OpenCV
-        
         For video file:
-        Take cv2 VideoCapture object and run in loop to get each frame
+        Take OpenCV VideoCapture object and run in loop to get each frame
         until video file end or interrupted
         
         For camera:
-        Take cv2 VideoCapture object and run in loop to get stream frame
+        Take OpenCV VideoCapture object and run in loop to get stream frame
         until stream interrupted or close
 
         Args:
