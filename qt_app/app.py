@@ -6,7 +6,7 @@ sys.path.insert(0, os.getcwd())
 import numpy as np
 
 # Qt
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCloseEvent, QImage, QPixmap
 from PyQt6.QtWidgets import QMainWindow, QApplication, QFileDialog
 
@@ -52,12 +52,12 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         self.action_open_video.triggered.connect(self.on_open_video)
         self.action_camera_source.triggered.connect(self.on_open_camera)
         self.start_button.clicked.connect(self.on_start_clicked)
-        self.toggle_pause_button.clicked.connect(self.on_toggle_pause)
+        self.pause_button.clicked.connect(self.on_pause_clicked)
         self.exercise_list.currentItemChanged.connect(self.on_exercise_changed)
         
         # disable buttons
         self.start_button.setEnabled(False)
-        self.toggle_pause_button.setEnabled(False)
+        self.pause_button.setEnabled(False)
         
         # init variables
         self.img_frame.setText(NO_VIDEO_SOURCE_MSG)
@@ -87,21 +87,19 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             
         counter = self._create_camera_rep_counter(cam_port, self.rep_counter)
         
-        # only prepare video when there is no video in queue
-        # otherwise prepare video will be called within
-        # previous video complete/interrupt event
-        should_prepare = not len(self.video_queue)
-            
+        # add video to queue
         self.video_queue.append(counter)
         
-        if should_prepare:
-            self._prepare_video()
+        self.rep_count_label.setText("0")
+        self.rep_counter.reset_metrics()
+            
+        counter.start()
         
     def on_open_video(self):
         vid_path, _ = QFileDialog.getOpenFileName(self,
                                                "Open video",
                                                filter="Video file (*.mp4)")
-                
+        
         if os.path.exists(vid_path):
             # set video path
             self.video_path = vid_path
@@ -113,16 +111,13 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             # create a video repetition counter
             counter = self._create_video_rep_counter(self.rep_counter)
             
-            # only prepare video when there is no video in queue
-            # otherwise prepare video will be called within
-            # previous video complete/interrupt event
-            should_prepare = not len(self.video_queue)
-            
             # add video to queue
             self.video_queue.append(counter)
             
-            if should_prepare:
-                self._prepare_video()
+            self.rep_count_label.setText("0")
+            self.rep_counter.reset_metrics()
+             
+            counter.start()
             
     def _cancel_current_video(self, v_rep_counter:VideoRepetitionCounter):
         if v_rep_counter and v_rep_counter.isRunning():
@@ -136,17 +131,17 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         else:
             # pop first video from queue
             self.video_queue.pop(0)
-            
-            # prepare next queued video
-            self._prepare_video()
     
     def _create_video_rep_counter(self, rep_counter:RepetitionCounter):
         # create new video repetition counter
         counter = VideoRepetitionCounter(video_path=self.video_path, 
                                          rep_counter=rep_counter, 
-                                         frame_per_second=30.)
+                                         frame_per_second=30.,
+                                         pause_at_start=True)
         
-        # connect slots    
+        # connect slots
+        counter.onPrepare.connect(self.on_prepare)
+        counter.onReady.connect(self.on_ready)    
         counter.onRepCount.connect(self.on_rep_count)
         counter.onInterrupted.connect(self.on_interrupted)
         counter.onCompleted.connect(self.on_video_completed)
@@ -158,31 +153,18 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         counter = VideoRepetitionCounter(video_path=camera_device_port,
                                          source_type=VideoRepetitionCounter.SourceType.Camera, 
                                          rep_counter=rep_counter, 
-                                         frame_per_second=30.)
+                                         frame_per_second=30.,
+                                         pause_at_start=True)
+        
+        # connect slots
+        counter.onPrepare.connect(self.on_prepare)
+        counter.onReady.connect(self.on_ready)  
         counter.onRepCount.connect(self.on_rep_count)
         counter.onInterrupted.connect(self.on_interrupted)
         counter.onCompleted.connect(self.on_video_completed)
         counter.finished.connect(counter.deleteLater)
         
         return counter
-    
-    def _prepare_video(self):
-        if len(self.video_queue):
-            # render first frame of video in last video queue
-            video = self.video_queue[-1]
-            first_frame = video.read_frame()
-            
-            # if no frame then it is camera stream
-            if first_frame is not None:
-                self._render_frame(first_frame)
-            else:
-                self.img_frame.setText("Click start to start camera streaming")
-                
-            self.start_button.setEnabled(True)
-            self.toggle_pause_button.setEnabled(True)
-        else:
-            self.start_button.setEnabled(False)
-            self.toggle_pause_button.setEnabled(False)
                 
     def _render_frame(self, frame):
         # get widget width and height
@@ -229,6 +211,19 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         # redraw
         self.metric_plot.figure.canvas.draw()
     
+    def on_prepare(self):
+        self.img_frame.setText("Preparing video source....")
+    
+    def on_ready(self, preview_frame):
+        # if no frame then it is camera stream
+        if preview_frame is not None:
+            self._render_frame(preview_frame)
+        else:
+            self.img_frame.setText("Click start to start camera streaming")
+            
+        self.start_button.setEnabled(True)
+        self.pause_button.setEnabled(True)
+            
     def on_rep_count(self, frame:np.ndarray, counter:RepetitionCounter):
         # get metric
         metric = counter.get_metric(counter.current_metric_name)
@@ -246,32 +241,25 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         # pop first video from queue
         self.video_queue.pop(0)
         
-        # prepare next queued video
-        self._prepare_video()
+        self.start_button.setEnabled(False)
+        self.pause_button.setEnabled(False)
         
     def on_interrupted(self):
         # pop first video from queue
         self.video_queue.pop(0)
-        
-        # prepare next queued video
-        self._prepare_video()
                 
     def on_start_clicked(self):
         # start last video in queue if it is not running
-        if len(self.video_queue) and not self.video_queue[-1].isRunning():
-            self.rep_count_label.setText("0")
-            self.rep_counter.reset_metrics()
-            self.video_queue[-1].start()
-            
-    def on_toggle_pause(self):
-        if len(self.video_queue) and self.video_queue[-1].isRunning():
+        if len(self.video_queue) > 0:
             video = self.video_queue[-1]
             if video.is_paused():
                 video.resume()
-                self.toggle_pause_button.setText("Pause")
-            else:
+            
+    def on_pause_clicked(self):
+        if len(self.video_queue) > 0:
+            video = self.video_queue[-1] 
+            if not video.is_paused():
                 video.pause()
-                self.toggle_pause_button.setText("Resume")
     
     def on_exercise_changed(self, current, previous):
         self.current_exercise_name = current.text()

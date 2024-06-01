@@ -10,8 +10,9 @@ import warnings
 from enum import Enum
 
 class VideoSource(QThread):
+    onPrepare = pyqtSignal()
+    onReady = pyqtSignal(object)
     onFrame = pyqtSignal(np.ndarray)
-    onReadFrameFail = pyqtSignal(np.ndarray)
     onCompleted = pyqtSignal()
     onInterrupted = pyqtSignal()
     onVideoSourceFail = pyqtSignal()
@@ -22,7 +23,8 @@ class VideoSource(QThread):
                  video_path:str, 
                  source_type:SourceType=SourceType.VideoFile, 
                  frame_per_second:float=30., 
-                 video_capture_api:int=cv2.CAP_ANY):
+                 video_capture_api:int=cv2.CAP_ANY,
+                 pause_at_start:bool=False):
         """
         A Qt thread for capturing video. Support for video clip and camera.
         
@@ -35,18 +37,23 @@ class VideoSource(QThread):
         do extra work on video frame
         
         Signals:
+        - onPrepare (): call when preparing video source
+        - onReady (NDArray|None): call when preparing video source ready before entering the frame loop.
+        If it is video clip a preview frame is given otherwise None if it is camera.
         - onFrame (NDArray): call when video frame is captured
-        - onReadFrameFail(NDArray): call when cv2 read frame fail and provide
         a black image
         - onCompleted (): call when video source end
         - onInterrupted (): call when video is interrupted 
 
         Args:
-            video_path (str): path to video file source or camera device port number
-            source_type (SourceType): type of video source either video file or camera
-            frame_per_second (float, optional): frame per second for video source. Defaults to 30..
-            video_capture_api (int): cv2 VideoCapture api 
+            - video_path (str): path to video file source or camera device port number
+            - source_type (SourceType): type of video source either video file or camera
+            - frame_per_second (float, optional): frame per second for video source. Defaults to 30..
+            - video_capture_api (int, optional): cv2 VideoCapture api 
             refer to [here](https://docs.opencv.org/3.4/d4/d15/group__videoio__flags__base.html)
+            - pause_at_start (bool, optional): pause video source when thread started. Default to False.
+            When you need to manually start video source set this to True. Use methods resume() and 
+            pause() to start or pause video source.
 
         Raises:
             Exception: path to video clip file doesn't exists
@@ -60,25 +67,13 @@ class VideoSource(QThread):
             if not os.path.exists(video_path):
                 raise Exception(f"video {video_path} doesn't exists")
             self.video_path = video_path
-            
-            # create video capture for video clip
-            # as we allow to read frame from video clip
-            self.video_clip_cap = cv2.VideoCapture(self.video_path, self.cv_video_capture_api)
-            cc = self.video_clip_cap.get(cv2.CAP_PROP_FOURCC)
-            self.video_clip_cap.set(cv2.CAP_PROP_FOURCC, cc)
-            
         elif self.source_type.value == self.SourceType.Camera.value:
             self.video_path = video_path
         else:
             raise Exception(f"Unknow source type {self.source_type}")
-        
-        if self.source_type.value == self.SourceType.VideoFile.value:
-            video_fps = self.video_clip_cap.get(cv2.CAP_PROP_FPS)
-            self.fps = 1. / video_fps
-        else:    
-            self.fps = 1./frame_per_second
-            
-        self.paused = False
+          
+        self.fps = 1./frame_per_second 
+        self.paused = pause_at_start
         self.cond = QWaitCondition()
         self.sync = QMutex()
         
@@ -108,7 +103,7 @@ class VideoSource(QThread):
         """
         return self.paused
     
-    def read_frame(self, frame_index=0) -> np.ndarray|None:
+    def read_frame(self, video_clip:cv2.VideoCapture, frame_index=0) -> np.ndarray|None:
         """
         Get a particular frame from video clip
         
@@ -121,8 +116,12 @@ class VideoSource(QThread):
             NDArray|None: frame in Numpy array or None can't read frame
         """
         if self.source_type.value == self.SourceType.VideoFile.value:
-            self.video_clip_cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
-            ret, frame = self.video_clip_cap.read()
+            video_clip.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
+            ret, frame = video_clip.read()
+            
+            # reset frame position to 0
+            video_clip.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            
             if ret:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 return frame
@@ -135,18 +134,54 @@ class VideoSource(QThread):
         Args:
             frame (NDArray): captured frame from video
         """
-        pass        
+        pass      
             
     def run(self):
         if self.source_type.value == self.SourceType.VideoFile.value:
-            self.video_clip_loop(self.video_clip_cap)
+            self.start_video_clip_loop(self.video_path, self.cv_video_capture_api)
         elif self.source_type.value == self.SourceType.Camera.value:
             if platform.system() == 'Linux':
-                self.camera_capture_loop_v4l2(int(self.video_path))
+                self.start_camera_capture_loop_v4l2(int(self.video_path))
             else:
-                self.camera_capture_loop_cv(int(self.video_path))
-    
-    def camera_capture_loop_cv(self, camera_device_port:int):
+                self.start_camera_capture_loop_cv(int(self.video_path))
+
+    def start_video_clip_loop(self, video_path:str, video_capture_api:int=cv2.CAP_ANY):
+        """
+        For all OS system
+        
+        Main thread loop for capturing video clip frame 
+        """
+        try:
+            self.onPrepare.emit()
+            
+            # create video capture for video clip
+            # as we allow to read frame from video clip
+            self.video_clip_cap = cv2.VideoCapture(video_path, video_capture_api)
+            cc = self.video_clip_cap.get(cv2.CAP_PROP_FOURCC)
+            self.video_clip_cap.set(cv2.CAP_PROP_FOURCC, cc)
+            
+            if not self.video_clip_cap.isOpened():
+                warnings.warn(f"Video source:{self.video_path}, Type:{self.source_type.name} can't be opend")
+            
+            # set frame per seconds
+            video_fps = self.video_clip_cap.get(cv2.CAP_PROP_FPS)
+            self.fps = 1. / video_fps
+            
+            first_frame = self.read_frame(self.video_clip_cap)
+            
+            # set frame position at beginning
+            self.video_clip_cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                
+            self.onReady.emit(first_frame)
+            
+            self.cv_video_capture_loop(self.video_clip_cap)
+        except Exception as e:
+            print(e)
+            self.onVideoSourceFail.emit()
+        finally:
+            self.video_clip_cap.release()
+
+    def start_camera_capture_loop_cv(self, camera_device_port:int):
         """_summary_
         
         Main thread loop for streaming camera frame
@@ -157,18 +192,23 @@ class VideoSource(QThread):
             camera_device_port (int): port number of camera device
         """
         try:
-            cam = cv2.VideoCapture(camera_device_port, self.cv_video_capture_api)
+            self.onPrepare.emit()
             
-            if not cam.isOpened():
+            self.cam = cv2.VideoCapture(camera_device_port, self.cv_video_capture_api)
+            
+            if not self.cam.isOpened():
                 warnings.warn(f"Camera device port:{self.video_path}, Type:{self.source_type.name} can't be opend")
             
-            self.cv_video_capture_loop(cam)
-        except:
+            self.onReady.emit(None)
+            
+            self.cv_video_capture_loop(self.cam)
+        except Exception as e:
+            print(e)
             self.onVideoSourceFail.emit()
         finally:
-            cam.release()            
+            self.cam.release()            
     
-    def camera_capture_loop_v4l2(self, camera_device_port:int):
+    def start_camera_capture_loop_v4l2(self, camera_device_port:int):
         """
         Main thread loop for streaming camera frame
         
@@ -180,21 +220,25 @@ class VideoSource(QThread):
             camera_device_port (int): port number of camera device
         """
         try:
-            cam = Device.from_id(camera_device_port)
-            cam.open()
-            fmt = cam.get_format(BufferType.VIDEO_CAPTURE)
-            cam.set_format(BufferType.VIDEO_CAPTURE, fmt.width, fmt.height ,'MJPG')
+            self.onPrepare.emit()
             
-            for frame in cam:
-                # if interrupted
-                if self.isInterruptionRequested():
-                    break
-                
+            self.cam = Device.from_id(camera_device_port)
+            self.cam.open()
+            fmt = self.cam.get_format(BufferType.VIDEO_CAPTURE)
+            self.cam.set_format(BufferType.VIDEO_CAPTURE, fmt.width, fmt.height ,'MJPG')
+            
+            self.onReady.emit(None)
+            
+            for frame in self.cam:
                 # if paused
                 self.sync.lock()
                 if self.paused:
                     self.cond.wait(self.sync)
                 self.sync.unlock()
+                
+                # if interrupted
+                if self.isInterruptionRequested():
+                    break
                 
                 now = time.time()
                 
@@ -214,29 +258,11 @@ class VideoSource(QThread):
                 self.onInterrupted.emit()
             else:
                 self.onCompleted.emit()     
-        except:
+        except Exception as e:
+            print(e)
             self.onVideoSourceFail.emit()
         finally:
-            cam.close()
-    
-    def video_clip_loop(self, video_clip:cv2.VideoCapture):
-        """
-        For all OS system
-        
-        Main thread loop for capturing video clip frame 
-        """
-        try:
-            # set frame position at beginning
-            video_clip.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            
-            if not video_clip.isOpened():
-                warnings.warn(f"Video source:{self.video_path}, Type:{self.source_type.name} can't be opend")
-                
-            self.cv_video_capture_loop(video_clip)
-        except:
-            self.onVideoSourceFail.emit()
-        finally:
-            video_clip.release()
+            self.cam.close()
 
     def cv_video_capture_loop(self, video_cap:cv2.VideoCapture):
         """
@@ -251,16 +277,16 @@ class VideoSource(QThread):
         Args:
             video_cap (cv2.VideoCapture): cv2 VideoCapture
         """
-        while(video_cap.isOpened()):
-            # if interrupted
-            if self.isInterruptionRequested():
-                break
-            
+        while(True):
             # if paused
             self.sync.lock()
             if self.paused:
                 self.cond.wait(self.sync)
             self.sync.unlock()
+            
+            # if interrupted
+            if self.isInterruptionRequested():
+                break
             
             now = time.time()
             
@@ -279,8 +305,8 @@ class VideoSource(QThread):
                 if time_diff < self.fps:
                     time.sleep(self.fps - time_diff)
             else:
-                self.onReadFrameFail.emit(np.zeros((600,800,3)))
-
+                break
+        
         if self.isInterruptionRequested():
             self.onInterrupted.emit()
         else:

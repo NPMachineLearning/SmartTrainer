@@ -1,4 +1,4 @@
-
+import time
 from PyQt6.QtWidgets import QDialog, QListWidgetItem
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtCore import Qt, pyqtSignal
@@ -47,6 +47,7 @@ class CameraSourceSelectorDialog(QDialog, Ui_Dialog):
         self.cam_source = VideoSource(source, VideoSource.SourceType.Camera)
         self.cam_source.onFrame.connect(self.on_frame)
         self.cam_source.onVideoSourceFail.connect(self.on_camera_fail)
+        self.cam_source.finished.connect(self.cam_source.deleteLater)
         self.cam_source.start()
     
     def release_resource(self):
@@ -85,16 +86,16 @@ class CameraSourceSelectorDialog(QDialog, Ui_Dialog):
                    
     def on_accepted(self):
         if self.current_camera_avaliable:
-            self.onCameraSelected.emit(self.cam_source.video_path)
-        self.release_resource()
-    
+            vid_path = self.cam_source.video_path
+            self.release_resource()
+            # wait 1 second for camera resource to be released
+            time.sleep(1.)
+            self.onCameraSelected.emit(vid_path)
+        
     def on_rejected(self):
         self.release_resource()
     
     def on_camera_source_changed(self, current:QListWidgetItem, previous:QListWidgetItem):
         self.selected_camera_port = current.text()
         self.start_preview(self.selected_camera_port)
-    
-    def closeEvent(self, evt):
-        self.release_resource()
         
