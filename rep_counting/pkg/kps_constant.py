@@ -18,3 +18,25 @@ KPS_INDEX_DICT = Enum('KPS_NAME_INDEX_MAPPER',
                         "right_knee":14, 
                         "left_ankle":15, 
                         "right_ankle":16})
+
+SKELETON_COLOR = Enum("SKELETON_COLOR",
+                      {"left": (255,0,0),
+                       "right": (0,255,0),
+                       "left_right": (0,0,255)})
+
+KPS_SKELETON_DRAW_DATA = {"nose_leye": (KPS_INDEX_DICT.nose.value, KPS_INDEX_DICT.left_eye.value, SKELETON_COLOR.left.value),
+                          "nose_reye": (KPS_INDEX_DICT.nose.value, KPS_INDEX_DICT.right_eye.value, SKELETON_COLOR.right.value),
+                          "leye_lear": (KPS_INDEX_DICT.left_eye.value, KPS_INDEX_DICT.left_ear.value, SKELETON_COLOR.left.value),
+                          "reye_rear": (KPS_INDEX_DICT.right_eye.value, KPS_INDEX_DICT.right_ear.value, SKELETON_COLOR.right.value),
+                          "lshl_lelb": (KPS_INDEX_DICT.left_shoulder.value, KPS_INDEX_DICT.left_elbow.value, SKELETON_COLOR.left.value),
+                          "rshl_relb": (KPS_INDEX_DICT.right_shoulder.value, KPS_INDEX_DICT.right_elbow.value, SKELETON_COLOR.right.value),
+                          "lelb_lwrist": (KPS_INDEX_DICT.left_elbow.value, KPS_INDEX_DICT.left_wrist.value, SKELETON_COLOR.left.value),
+                          "relb_rwrist": (KPS_INDEX_DICT.right_elbow.value, KPS_INDEX_DICT.right_wrist.value, SKELETON_COLOR.right.value),
+                          "lshl_lhip": (KPS_INDEX_DICT.left_shoulder.value, KPS_INDEX_DICT.left_hip.value, SKELETON_COLOR.left.value),
+                          "rshl_rhip": (KPS_INDEX_DICT.right_shoulder.value, KPS_INDEX_DICT.right_hip.value, SKELETON_COLOR.right.value),
+                          "lhip_lknee": (KPS_INDEX_DICT.left_hip.value, KPS_INDEX_DICT.left_knee.value, SKELETON_COLOR.left.value),
+                          "rhip_rknee": (KPS_INDEX_DICT.right_hip.value, KPS_INDEX_DICT.right_knee.value, SKELETON_COLOR.right.value),
+                          "lknee_lank": (KPS_INDEX_DICT.left_knee.value, KPS_INDEX_DICT.left_ankle.value, SKELETON_COLOR.left.value),
+                          "rknee_rank": (KPS_INDEX_DICT.right_knee.value, KPS_INDEX_DICT.right_ankle.value, SKELETON_COLOR.right.value),
+                          "lshl_rshl": (KPS_INDEX_DICT.left_shoulder.value, KPS_INDEX_DICT.right_shoulder.value, SKELETON_COLOR.left_right.value),
+                          "lhip_rhip": (KPS_INDEX_DICT.left_hip.value, KPS_INDEX_DICT.right_hip.value, SKELETON_COLOR.left_right.value)}

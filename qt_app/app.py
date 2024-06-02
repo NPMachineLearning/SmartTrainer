@@ -54,6 +54,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         self.start_button.clicked.connect(self.on_start_clicked)
         self.pause_button.clicked.connect(self.on_pause_clicked)
         self.exercise_list.currentItemChanged.connect(self.on_exercise_changed)
+        self.draw_skeleton_checkbox.stateChanged.connect(self.on_draw_skeleton_changed)
         
         # disable buttons
         self.start_button.setEnabled(False)
@@ -71,6 +72,11 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         
         # create repetition counter 
         self.rep_counter = RepetitionCounter(MODEL_PATH, CONFIG_FILE)
+        
+    def on_draw_skeleton_changed(self):
+        if len(self.video_queue):
+            video = self.video_queue[-1]
+            video.set_draw_skeleton(self.draw_skeleton_checkbox.isChecked())
         
     def on_open_camera(self):
         # show dialog
@@ -137,7 +143,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         counter = VideoRepetitionCounter(video_path=self.video_path, 
                                          rep_counter=rep_counter, 
                                          frame_per_second=30.,
-                                         pause_at_start=True)
+                                         pause_at_start=True,
+                                         draw_skeleton=self.draw_skeleton_checkbox.isChecked())
         
         # connect slots
         counter.onPrepare.connect(self.on_prepare)
@@ -150,11 +157,14 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         return counter
     
     def _create_camera_rep_counter(self, camera_device_port:str, rep_counter:RepetitionCounter):
+        draw_skeleton = self.draw_skeleton_checkbox.checkState == Qt.CheckState.Checked
+        
         counter = VideoRepetitionCounter(video_path=camera_device_port,
                                          source_type=VideoRepetitionCounter.SourceType.Camera, 
                                          rep_counter=rep_counter, 
                                          frame_per_second=30.,
-                                         pause_at_start=True)
+                                         pause_at_start=True,
+                                         draw_skeleton=self.draw_skeleton_checkbox.isChecked())
         
         # connect slots
         counter.onPrepare.connect(self.on_prepare)
@@ -263,6 +273,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
     
     def on_exercise_changed(self, current, previous):
         self.current_exercise_name = current.text()
+        self.current_exercise_label.setText(self.current_exercise_name)
         self.rep_counter.set_metric(EXERCISE_METRICS_MAP[self.current_exercise_name])
                     
     def closeEvent(self, a0: QCloseEvent | None) -> None:

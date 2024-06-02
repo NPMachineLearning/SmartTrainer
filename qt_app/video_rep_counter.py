@@ -13,7 +13,8 @@ class VideoRepetitionCounter(VideoSource):
                  source_type:VideoSource.SourceType=VideoSource.SourceType.VideoFile, 
                  rep_counter:RepetitionCounter=None, 
                  frame_per_second:float=30.,
-                 pause_at_start:bool=False):
+                 pause_at_start:bool=False,
+                 draw_skeleton:bool=False):
         """
         A Qt thread for capturing video and coutning repetitoin.
         
@@ -41,20 +42,33 @@ class VideoRepetitionCounter(VideoSource):
             - pause_at_start (bool, optional): pause video source when thread started. Default to False.
             When you need to manually start video source set this to True. Use methods resume() and 
             pause() to start or pause video source.
+            - draw_skeleton (bool, optional): whether to draw skeleton or not. Default to False.
+            Enable drawing skeleton could decrease performance.
 
         Raises:
-            Exception: updating repetiton counter
+            Exception: updating repetiton counter went wrong
         """
         super().__init__(video_path=video_path, 
                          source_type=source_type, 
                          frame_per_second=frame_per_second,
                          pause_at_start=pause_at_start)
         self.rep_counter = rep_counter
+        self.draw_skeleton = draw_skeleton
     
+    def set_draw_skeleton(self, value:bool) -> None:
+        self.sync.lock()
+        self.draw_skeleton = value
+        self.sync.unlock()
+        
     def _process_frame(self, frame: np.ndarray) -> None:
+        if self.isInterruptionRequested():
+            return
+        
+        self.sync.lock()
         if self.rep_counter is not None:
-            self.sync.lock()
-            self.rep_counter.update_metric(frame)
-            self.sync.unlock()
-            self.onRepCount.emit(frame, self.rep_counter)              
+            kps_norm = self.rep_counter.update_metric(frame)
+            if self.draw_skeleton:
+                frame = self.rep_counter.draw_kps_skeleton(frame, kps_norm, 5)
+            self.onRepCount.emit(frame, self.rep_counter)
+        self.sync.unlock()              
         
