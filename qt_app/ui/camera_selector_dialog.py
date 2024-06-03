@@ -2,10 +2,10 @@ import time
 from PyQt6.QtWidgets import QDialog, QListWidgetItem
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtCore import Qt, pyqtSignal
-from dialog_camera_source import Ui_Dialog
+from .dialog_camera_source import Ui_Dialog
 import cv2
 import warnings
-from video_source import VideoSource
+from video_source.video_source import VideoSource
 
 class CameraSourceSelectorDialog(QDialog, Ui_Dialog):
     onCameraSelected = pyqtSignal(str)

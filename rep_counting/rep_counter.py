@@ -1,21 +1,21 @@
 import tensorflow as tf
 import cv2
-from .movenet.movenet_infer import load_model, predict, preprocess_input_image, preprocess_kps, INPUT_SIZE
+from .movenet.movenet_infer import load_model, predict, preprocess_input_image, preprocess_kps, INPUT_SIZE, MODEL_PATH
 from .pkg.kps_metrics_jumping_jack import KpsMetricsJumpingJack
 from .pkg.kps_metrics_push_up import KpsMetricsPushup
 from .pkg.kps_metrics import KpsMetrics
 from .pkg.kps_constant import KPS_SKELETON_DRAW_DATA
 
 class RepetitionCounter:
-    def __init__(self, model_path, config_path) -> None:
+    def __init__(self, config_path, model_path=MODEL_PATH) -> None:
         """
         RepetitionCounter is a class that can handle multiple supported
         exercises. Each exercise has its own metric which is inherite from
         KpsMetrics.
 
         Args:
-            model_path (str): path movenet model tflite file
             config_path (str): path to exerise config json file 
+            model_path (str): path movenet model tflite file
         """
         self.model_path = model_path
         self.config_path = config_path

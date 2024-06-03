@@ -1,3 +1,5 @@
 .venv
 gifs/
 __pycache__/
+build/
+dist/

@@ -11,14 +11,14 @@ from PyQt6.QtGui import QCloseEvent, QImage, QPixmap
 from PyQt6.QtWidgets import QMainWindow, QApplication, QFileDialog
 
 # Qt UI
-from main_window import Ui_MainWindow
-from camera_selector_dialog import CameraSourceSelectorDialog
+from ui.main_window import Ui_MainWindow
+from ui.camera_selector_dialog import CameraSourceSelectorDialog
 
 # matplotlib
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
-from qt_app.video_rep_counter import VideoRepetitionCounter
+from video_source.video_rep_counter import VideoRepetitionCounter
 
 # Repetition counter
 from rep_counting.pkg.kps_metrics import KpsMetrics
@@ -27,7 +27,6 @@ from rep_counting.rep_counter import RepetitionCounter
 
 NO_VIDEO_SOURCE_MSG = "No video source"
 CONFIG_FILE = './smart_trainer_config/config.json'
-MODEL_PATH = './rep_counting/movenet/movenet_singlepose_thunder_3.tflite'
 
 EXERCISE_METRICS_MAP = {
     "Jumping jacks": "jumping_jacks",
@@ -71,7 +70,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         self.video_queue:list[VideoRepetitionCounter] = []
         
         # create repetition counter 
-        self.rep_counter = RepetitionCounter(MODEL_PATH, CONFIG_FILE)
+        self.rep_counter = RepetitionCounter(CONFIG_FILE)
         
     def on_draw_skeleton_changed(self):
         if len(self.video_queue):
