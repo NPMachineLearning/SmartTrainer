@@ -20,6 +20,38 @@ Here I use signal processing to handle the problem. One of downside of doing
 this is not generic which means it is specific to certain exercise or action and
 we need to manually define measurement for particular exercise or action.
 
+## Desktop app deployment
+
+Directory qt_app is source code for application on desktop.
+
+### Support platform
+
+- windows
+
+### Buid instruction
+
+Note: It is good idea to create and environment
+before buiding application.
+
+#### Python requirement
+
+> =3.9.0
+
+#### Library requirements
+
+Following libraries are required for building desktop application.
+
+- [tensorflow](https://pypi.org/project/tensorflow/)
+- [opencv-python](https://pypi.org/project/opencv-python/)
+- [linuxpy](https://github.com/tiagocoutinho/linuxpy)
+- [pyqt6](https://pypi.org/project/PyQt6/)
+
+#### Instruction
+
+1. Install [cx-Freeze](https://pypi.org/project/cx-Freeze/)
+2. Go to directory qt_app
+3. Enter command `python setup.py build`
+
 ## References
 
 ### Human body keypoints
