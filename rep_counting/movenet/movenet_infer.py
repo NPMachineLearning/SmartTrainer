@@ -1,6 +1,7 @@
 import tensorflow as tf
 import matplotlib
 import matplotlib.pylab as plt
+import numpy as np
 
 matplotlib.use("TkAgg")
 
@@ -28,6 +29,13 @@ def load_model(model_path=MODEL_PATH):
     """
     interpreter = tf.lite.Interpreter(model_path=model_path)
     interpreter.allocate_tensors()
+    
+    # warming up model
+    img = tf.convert_to_tensor(np.zeros((INPUT_SIZE[0], INPUT_SIZE[0], 3)), dtype=tf.float32)
+    img = img[tf.newaxis, ...]
+    predict(img, 
+            interpreter, interpreter.get_input_details(), 
+            interpreter.get_output_details())
     
     return interpreter, interpreter.get_input_details(), interpreter.get_output_details()
 

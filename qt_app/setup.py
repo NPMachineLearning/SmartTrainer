@@ -3,7 +3,7 @@ import os
 
 # Dependencies are automatically detected, but it might need
 # fine tuning.
-build_options = {'packages': ['tensorflow'],
+build_options = {'packages': [],
                  'includes': ['rep_counting'], 
                  'excludes': [],
                  'include_files': ['../rep_counting', '../smart_trainer_config'],
@@ -12,7 +12,7 @@ build_options = {'packages': ['tensorflow'],
 base = 'gui'
 
 executables = [
-    Executable('app.py', base=base)
+    Executable('test_app.py', base=base)
 ]
 
 setup(name='Exercise Repetition Counter',

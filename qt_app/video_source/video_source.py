@@ -1,12 +1,13 @@
-from PyQt6.QtCore import QThread, pyqtSignal, QWaitCondition, QMutex
-from linuxpy.video.device import Device, BufferType
-
 import cv2
 import os
-import platform
 import numpy as np
 import time
 import warnings
+import platform
+
+from PyQt6.QtCore import QThread, pyqtSignal, QWaitCondition, QMutex
+if platform.system() == "Linux":
+    from linuxpy.video.device import Device, BufferType
 from enum import Enum
 
 class VideoSource(QThread):
@@ -103,7 +104,7 @@ class VideoSource(QThread):
         """
         return self.paused
     
-    def read_frame(self, video_clip:cv2.VideoCapture, frame_index=0) -> np.ndarray|None:
+    def read_frame(self, video_clip:cv2.VideoCapture, frame_index=0) -> np.ndarray:
         """
         Get a particular frame from video clip
         

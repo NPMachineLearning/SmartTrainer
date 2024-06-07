@@ -275,7 +275,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         self.current_exercise_label.setText(self.current_exercise_name)
         self.rep_counter.set_metric(EXERCISE_METRICS_MAP[self.current_exercise_name])
                     
-    def closeEvent(self, a0: QCloseEvent | None) -> None:
+    def closeEvent(self, a0: QCloseEvent) -> None:
         if len(self.video_queue):
             self._cancel_current_video(self.video_queue[-1])
         a0.accept()
