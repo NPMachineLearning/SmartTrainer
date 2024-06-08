@@ -3,7 +3,7 @@ import matplotlib
 import matplotlib.pylab as plt
 import numpy as np
 
-matplotlib.use("TkAgg")
+matplotlib.use("QtAgg")
 
 MODEL_PATH = "./rep_counting/movenet/movenet_singlepose_thunder_3.tflite"
 INPUT_SIZE = (256, 256)
@@ -126,11 +126,11 @@ def preprocess_input_image(image, size=INPUT_SIZE, pad=False):
 
 if __name__ == "__main__":
     interpreter, inputs, outputs = load_model(MODEL_PATH)
-    raw = tf.io.read_file("./gifs/squat.gif")
+    raw = tf.io.read_file("./test_video/squats/squat.gif")
     raw_image = tf.io.decode_gif(raw)[15]
     image = preprocess_input_image(raw_image, INPUT_SIZE, False)
     kps_with_scores = predict(image, interpreter, inputs, outputs)
-    kps_with_scores = preprocess_kps(kps_with_scores, raw_image.shape[0], raw_image.shape[1])
+    kps_with_scores = preprocess_kps(kps_with_scores, (raw_image.shape[1], raw_image.shape[0]))
     fig, ax = plt.subplots(1)
     ax.imshow(raw_image)
     for kp in kps_with_scores:
