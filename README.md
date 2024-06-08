@@ -45,6 +45,7 @@ Following libraries are required for building desktop application.
 - [opencv-python](https://pypi.org/project/opencv-python/)
 - [linuxpy](https://github.com/tiagocoutinho/linuxpy)
 - [pyqt6](https://pypi.org/project/PyQt6/)
+- [matplotlib](https://pypi.org/project/matplotlib/)
 
 #### Instruction
 
