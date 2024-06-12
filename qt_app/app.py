@@ -1,14 +1,21 @@
 import sys
 import os
+
+# Solve custom module rep_counting import
+# issue.
+#
+# rep_counting module must located at same
+# level of qt_app or within qt_app
 sys.path.insert(0, os.getcwd())
+sys.path.insert(0, '../')
 
 # Numpy
 import numpy as np
 
 # Qt
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QCloseEvent, QImage, QPixmap
-from PyQt6.QtWidgets import QMainWindow, QApplication, QFileDialog
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCloseEvent, QImage, QPixmap
+from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog
 
 # Qt UI
 from ui.main_window import Ui_MainWindow
@@ -24,9 +31,17 @@ from video_source.video_rep_counter import VideoRepetitionCounter
 from rep_counting.pkg.kps_metrics import KpsMetrics
 from rep_counting.rep_counter import RepetitionCounter
 
-
+# Get absolute path current working directory where
+# sys.argv[0] contain path to current program.
+# This solve bundle executable app path issue.
+#
+# e.g on MacOS os.path.getcwd() always resolve to
+# incorrect path /Users/XXX-user-name-XXX not the program 
+# working directory
+CWDPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
 NO_VIDEO_SOURCE_MSG = "No video source"
-CONFIG_FILE = './smart_trainer_config/config.json'
+CONFIG_FILE = os.path.join(CWDPATH,
+                           'smart_trainer_config/config.json')
 
 EXERCISE_METRICS_MAP = {
     "Jumping jacks": "jumping_jacks",

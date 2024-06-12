@@ -1,4 +1,4 @@
-from PyQt6.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from rep_counting.rep_counter import RepetitionCounter
 from .video_source import VideoSource
 

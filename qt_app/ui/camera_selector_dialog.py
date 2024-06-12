@@ -1,7 +1,7 @@
 import time
-from PyQt6.QtWidgets import QDialog, QListWidgetItem
-from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import QDialog, QListWidgetItem
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtCore import Qt, pyqtSignal
 from .dialog_camera_source import Ui_Dialog
 import cv2
 import warnings

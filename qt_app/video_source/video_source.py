@@ -5,7 +5,7 @@ import time
 import warnings
 import platform
 
-from PyQt6.QtCore import QThread, pyqtSignal, QWaitCondition, QMutex
+from PyQt5.QtCore import QThread, pyqtSignal, QWaitCondition, QMutex
 if platform.system() == "Linux":
     from linuxpy.video.device import Device, BufferType
 from enum import Enum

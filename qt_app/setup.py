@@ -1,5 +1,6 @@
 ###
-# refer to https://github.com/marcelotduarte/cx_Freeze/blob/main/samples/pyqt6/setup.py
+# Reference to https://github.com/marcelotduarte/cx_Freeze/blob/main/samples/pyqt5/setup.py
+# and modify
 ###
 from cx_Freeze import setup, Executable
 import os
@@ -9,15 +10,14 @@ try:
 except ImportError:
     get_qt_plugins_paths = None
 
-# include:
-# rep_counting source code
+# copy:
 # exercise config file
-include_files = ['../rep_counting', '../smart_trainer_config']
+include_files = ['./smart_trainer_config']
 if get_qt_plugins_paths:
     # Inclusion of extra plugins (since cx_Freeze 6.8b2)
     # cx_Freeze automatically imports the following plugins depending on the
     # module used, but suppose we need the following:
-    include_files += get_qt_plugins_paths("PyQt6", "multimedia")
+    include_files += get_qt_plugins_paths("PyQt5", "multimedia")
 
 # Dependencies are automatically detected, but it might need
 # fine tuning.
@@ -26,7 +26,10 @@ build_options = {'packages': [],
                  'excludes': ["tkinter", "email", "pydoc"],
                  "bin_excludes": ["libqpdf.so", "libqpdf.dylib"],
                  'include_files': include_files,
-                 "zip_include_packages": ["PyQt6"],
+                 "zip_include_packages": ["PyQt5"],
+                 # include module search path for 
+                 # any modules outside and at same level
+                 # of this directory
                  'include_path': os.path.abspath("../")}
 
 base = 'gui'
@@ -36,7 +39,7 @@ executables = [
 ]
 
 setup(name='Exercise Repetition Counter',
-      version = '1.0',
+      version = '0.0.1',
       description = 'Counting exercise repetition',
       options = {'build_exe': build_options},
       executables = executables)
