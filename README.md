@@ -76,8 +76,8 @@ Note: **PyQt6 is not working well with cx_Freeze for MacOSX**
 4. Go to directory qt_app
 5. Run command
    - `python setup.py build` (Windows)
-   - `sudo python setup.py bdist_mac` (MacOSX)
-   - `sudo python setup.py build` (Linux)
+   - `sudo python3 setup.py bdist_mac` (MacOSX)
+   - `python3 setup.py build` (Linux)
 
 ## References
 
