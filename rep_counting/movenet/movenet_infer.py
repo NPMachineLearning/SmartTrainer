@@ -2,10 +2,12 @@ import tensorflow as tf
 import matplotlib
 import matplotlib.pylab as plt
 import numpy as np
+import os
 
 matplotlib.use("QtAgg")
 
-MODEL_PATH = "./rep_counting/movenet/movenet_singlepose_thunder_3.tflite"
+MODEL_PATH = os.path.join(os.path.dirname(__file__), 
+                          "movenet_singlepose_thunder_3.tflite")
 INPUT_SIZE = (256, 256)
 
 def validate_tensor_image(image):

@@ -20,22 +20,31 @@ Here I use signal processing to handle the problem. One of downside of doing
 this is not generic which means it is specific to certain exercise or action and
 we need to manually define measurement for particular exercise or action.
 
+## Run app
+
+1. Go to qt_app directory
+2. Run command `python app.py`
+
 ## Desktop app deployment
 
 Directory qt_app is source code for application on desktop.
 
 ### Support platform
 
-- windows
+- Windows
+- MacOSX
 
-### Buid instruction
+### Create application instruction
 
 Note: It is good idea to create and environment
-before buiding application.
+before buiding application. Following two common options.
+
+- [python venv](https://docs.python.org/3/library/venv.html)
+- [virtualenv](https://virtualenv.pypa.io/en/latest/)
 
 #### Python requirement
 
-> =3.9.0
+- `>=3.9.0`
 
 #### Library requirements
 
@@ -44,14 +53,28 @@ Following libraries are required for building desktop application.
 - [tensorflow](https://pypi.org/project/tensorflow/)
 - [opencv-python](https://pypi.org/project/opencv-python/)
 - [linuxpy](https://github.com/tiagocoutinho/linuxpy)
-- [pyqt6](https://pypi.org/project/PyQt6/)
+- [PyQt5](https://pypi.org/project/PyQt5/)
 - [matplotlib](https://pypi.org/project/matplotlib/)
 
-#### Instruction
+#### Steps
 
-1. Install [cx-Freeze](https://pypi.org/project/cx-Freeze/)
-2. Go to directory qt_app
-3. Enter command `python setup.py build`
+Note: Tool for creating executable application is using
+[cx_Freeze](https://cx-freeze.readthedocs.io/en/stable/index.html)
+
+Note: **PyQt6 is not working well with cx_Freeze for MacOSX**
+
+1. At root folder `python3 -m venv .venv`
+2. Activate environment
+   - `.\.venv\Script\activate` (Windows)
+   - `source ./.venv/bin/activate` (MacOSX, Linux)
+   - `source ./.venv/bin/activate.fish` (MacOSX, Linux wiht fish shell)
+3. Install packages
+   `pip install tensorflow opencv-python linuxpy matplotlib PyQt5 cx_Freeze`
+4. Go to directory qt_app
+5. Run command
+   - `python setup.py build` (Windows)
+   - `sudo python setup.py bdist_mac` (MacOSX)
+   - `sudo python setup.py build` (Linux)
 
 ## References
 
