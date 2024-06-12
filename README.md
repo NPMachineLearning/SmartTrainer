@@ -63,7 +63,10 @@ Note: Tool for creating executable application is using
 
 Note: **PyQt6 is not working well with cx_Freeze for MacOSX**
 
-1. At root folder `python3 -m venv .venv`
+1. At root folder run command either
+   - `python3 -m venv .venv`
+     or
+   - `python -m venv .venv`
 2. Activate environment
    - `.\.venv\Script\activate` (Windows)
    - `source ./.venv/bin/activate` (MacOSX, Linux)
