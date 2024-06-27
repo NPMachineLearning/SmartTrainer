@@ -25,6 +25,10 @@ we need to manually define measurement for particular exercise or action.
 1. Go to qt_app directory
 2. Run command `python app.py`
 
+Note: on linux might required to reinstall/install `libxcb-xinerama0` through apt
+if encounter following error.
+`qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found`
+
 ## Desktop app deployment
 
 Directory qt_app is source code for application on desktop.
