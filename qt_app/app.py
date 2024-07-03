@@ -13,9 +13,9 @@ sys.path.insert(0, '../')
 import numpy as np
 
 # Qt
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QCloseEvent, QImage, QPixmap
-from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QCloseEvent, QImage, QPixmap
+from PySide6.QtWidgets import QMainWindow, QApplication, QFileDialog
 
 # Qt UI
 from ui.main_window import Ui_MainWindow

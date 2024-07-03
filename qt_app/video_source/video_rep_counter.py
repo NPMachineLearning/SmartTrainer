@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSignal
+from PySide6.QtCore import Signal
 from rep_counting.rep_counter import RepetitionCounter
 from .video_source import VideoSource
 
@@ -6,7 +6,7 @@ import numpy as np
 
 
 class VideoRepetitionCounter(VideoSource):
-    onRepCount = pyqtSignal(np.ndarray, RepetitionCounter)
+    onRepCount = Signal(np.ndarray, RepetitionCounter)
     
     def __init__(self, 
                  video_path:str, 
