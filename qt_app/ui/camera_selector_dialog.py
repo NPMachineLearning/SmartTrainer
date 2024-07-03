@@ -1,14 +1,14 @@
 import time
-from PyQt5.QtWidgets import QDialog, QListWidgetItem
-from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtCore import Qt, pyqtSignal
+from PySide6.QtWidgets import QDialog, QListWidgetItem
+from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtCore import Qt, Signal
 from .dialog_camera_source import Ui_Dialog
 import cv2
 import warnings
 from video_source.video_source import VideoSource
 
 class CameraSourceSelectorDialog(QDialog, Ui_Dialog):
-    onCameraSelected = pyqtSignal(str)
+    onCameraSelected = Signal(str)
     
     def __init__(self, parent=None):
         super().__init__(parent)

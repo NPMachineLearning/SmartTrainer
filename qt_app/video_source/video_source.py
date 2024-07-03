@@ -5,18 +5,18 @@ import time
 import warnings
 import platform
 
-from PyQt5.QtCore import QThread, pyqtSignal, QWaitCondition, QMutex
+from PySide6.QtCore import QThread, Signal, QWaitCondition, QMutex
 if platform.system() == "Linux":
     from linuxpy.video.device import Device, BufferType
 from enum import Enum
 
 class VideoSource(QThread):
-    onPrepare = pyqtSignal()
-    onReady = pyqtSignal(object)
-    onFrame = pyqtSignal(np.ndarray)
-    onCompleted = pyqtSignal()
-    onInterrupted = pyqtSignal()
-    onVideoSourceFail = pyqtSignal()
+    onPrepare = Signal()
+    onReady = Signal(object)
+    onFrame = Signal(np.ndarray)
+    onCompleted = Signal()
+    onInterrupted = Signal()
+    onVideoSourceFail = Signal()
     
     SourceType = Enum("VideoSourceType", ["VideoFile", "Camera"])
     
