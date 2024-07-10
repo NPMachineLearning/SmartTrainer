@@ -13,11 +13,11 @@ class KpsMetrics(ABC):
         Create a keypoints metric object
         
         Args:
-            low_pass_filter (bool, optional): True using low pass filter to filter out 
+            - low_pass_filter (bool, optional): True using low pass filter to filter out 
             high frequency singal result in a smooth singal. Range (0.0, 1.0]. Defaults to True.
-            low_pass_filter_alpha (float, optional): alpha value for low pass filter 1.0 to not filter
+            - low_pass_filter_alpha (float, optional): alpha value for low pass filter 1.0 to not filter
             out high frequency singal. Defaults to 0.4.
-            config_path (str, optional): path to json config file contain data for exercise and used to
+            - config_path (str, optional): path to json config file contain data for exercise and used to
             count exercise reptition.
         """
         super().__init__()
@@ -100,8 +100,8 @@ class KpsMetrics(ABC):
         Processing keypoints into metrics
 
         Args:
-            kps (_type_): all keypoints
-            states (_type_): where all metrics to be stored
+            - kps (NDArray): all keypoints
+            - states (dict): where all metrics to be stored
         """
         pass
     
@@ -118,19 +118,27 @@ class KpsMetrics(ABC):
         """
         pass
     
-    def update_metrics(self, kps, ratio=(1., 1.)) -> None:
+    def update_metrics(self, kps, ratio=(1., 1.), confidence_rate=1.0, confidence_rate_threshold=0.5) -> None:
         """
         Main process to update metrics and do 
         exercise prepetition counting
 
         Args:
-            kps (dict): all keypoints from movenet
-            ratio (tuple, optional): scale for x and y 
+            - kps (dict): all keypoints from movenet
+            - ratio (tuple, optional): scale for x and y 
             only for calculate distance on keypoints
+            - confidence_rate (float): if this value is equal and greater
+            than confidence_rate_threshold, final metric will be updated,
+            otherwise it keep as same as last metric. Value between 0.0 ~ 1.0.
+            - confidence_rate_threshold (float): if confidence rate equal and greater
+            than this value, final metric will be updated. Value between 0.0 ~ 1.0. 
 
         Raises:
             Exception: low pass filter fail
         """
+        confidence_rate = max(min(confidence_rate, 1.0), 0.0)
+        confidence_rate_threshold = max(min(confidence_rate_threshold, 1.0), 0.0)
+        
         ###
         # process keypoints into metrics
         self._process_metrics(kps, self.states, ratio)
@@ -161,9 +169,14 @@ class KpsMetrics(ABC):
             
             ###
             # sum none stationary metrics
-            
-            sum_metric = np.sum(none_stationary_metrics, axis=0)[0]
-            self. tracked_metrics.append(sum_metric)
+            if len(self.tracked_metrics) > 0:
+                if confidence_rate >= confidence_rate_threshold:
+                    sum_metric = np.sum(none_stationary_metrics, axis=0)[0]
+                else:
+                    sum_metric = self.tracked_metrics[-1]
+            else:
+                sum_metric = np.sum(none_stationary_metrics, axis=0)[0]
+            self.tracked_metrics.append(sum_metric)
             
             ### 
             # update reptition count
@@ -231,7 +244,7 @@ class KpsMetrics(ABC):
         Load config data  
 
         Args:
-            config_data (dict): config data from json file for exercises
+            - config_data (dict): config data from json file for exercises
 
         Returns:
             dict: config data for sepcific exercise
@@ -281,11 +294,11 @@ class KpsMetrics(ABC):
         Calculate distance between two keypoints
         
         Args:
-            kpi1 (int): index of keypoint 1
-            kpi2 (int): index of keypoint 2
-            kps (dict): all keypoints
-            on_axis (str, optional): which axis to calculate on. Defaults to 'xy'.
-            ratio (tuple, optional): (x_ratio, y_ratio). Defaults to None. If None
+            - kpi1 (int): index of keypoint 1
+            - kpi2 (int): index of keypoint 2
+            - kps (dict): all keypoints
+            - on_axis (str, optional): which axis to calculate on. Defaults to 'xy'.
+            - ratio (tuple, optional): (x_ratio, y_ratio). Defaults to None. If None
             ratio is (1, 1)
 
         Raises:
@@ -322,10 +335,10 @@ class KpsMetrics(ABC):
         -> kpi23
 
         Args:
-            kpi1 (int): index of keypoints 1
-            kpi2 (int): index of keypoints 2
-            kpi3 (int): index of keypoints 3
-            kps (dict): all keypoints
+            - kpi1 (int): index of keypoints 1
+            - kpi2 (int): index of keypoints 2
+            - kpi3 (int): index of keypoints 3
+            - kps (dict): all keypoints
 
         Returns:
             angle(degree): angle between kpi21 and kpi23

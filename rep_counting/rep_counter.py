@@ -107,9 +107,9 @@ class RepetitionCounter:
         input_img = tf.convert_to_tensor(cv_frame)
         input_img = preprocess_input_image(input_img, INPUT_SIZE)
         kps_norm = predict(input_img, self.model, self.input, self.output)
-        kps_norm = preprocess_kps(kps_norm)
+        kps_norm, conf_rate = preprocess_kps(kps_norm)
         metric:KpsMetrics = self.exercise_metrics[self.current_metric_name]
-        metric.update_metrics(kps_norm)
+        metric.update_metrics(kps_norm, confidence_rate=conf_rate)
         
         return kps_norm 
         

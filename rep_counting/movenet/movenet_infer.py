@@ -75,15 +75,19 @@ def preprocess_kps(kps, scale_xy=(1., 1.)):
         Defaults to (1., 1.).
 
     Returns:
-        NDArray: Numpy 2d array in xy coordinate and scaled if scale_xy was
+        - NDArray: Numpy 2d array in xy coordinate and scaled if scale_xy was
         provided.
+        - Average confidence rate: float from 0.0 ~ 1.0 determine how confident
+        the keypoints would be in average.
     """
+    average_confidence_rate = np.mean(kps[:, 2], axis=0)
+    
     for i in range(len(kps)):
         temp_y = kps[i][0]
         kps[i][0] = kps[i][1] * scale_xy[0]
         kps[i][1] = temp_y * scale_xy[1]
         
-    return kps
+    return kps, average_confidence_rate
 
 def normalize_kps(kps, image_width, image_height):
         """
