@@ -1,6 +1,6 @@
-import tensorflow as tf
+# import tensorflow as tf
 import cv2
-from .movenet.movenet_infer import load_model, predict, preprocess_input_image, preprocess_kps, INPUT_SIZE, MODEL_PATH
+from .movenet.movenet_infer import load_model, predict, preprocess_input_image_cv, preprocess_kps, INPUT_SIZE, MODEL_PATH
 from .pkg.kps_metrics_jumping_jack import KpsMetricsJumpingJack
 from .pkg.kps_metrics_push_up import KpsMetricsPushup
 from .pkg.kps_metrics import KpsMetrics
@@ -21,7 +21,7 @@ class RepetitionCounter:
         self.config_path = config_path
         self.current_metric_name = None
         
-        self.model, self.input, self.output = self._load_model(model_path=self.model_path)
+        self.model = self._load_model(model_path=self.model_path)
         self.exercise_metrics = self._load_exercise_metrics(self.config_path)
     
     def _load_model(self, model_path):
@@ -104,13 +104,11 @@ class RepetitionCounter:
         if self.current_metric_name is None:
             raise Exception("call set_metric method at least once to set current metric name")
         
-        input_img = tf.convert_to_tensor(cv_frame)
-        input_img = preprocess_input_image(input_img, INPUT_SIZE)
-        kps_norm = predict(input_img, self.model, self.input, self.output)
+        input_img = preprocess_input_image_cv(cv_frame, INPUT_SIZE)
+        kps_norm = predict(input_img, self.model)
         kps_norm, conf_rate = preprocess_kps(kps_norm)
         metric:KpsMetrics = self.exercise_metrics[self.current_metric_name]
         metric.update_metrics(kps_norm, confidence_rate=conf_rate)
-        
         return kps_norm 
         
     def draw_kps_skeleton(self, cv_frame, kps_norm, thickness:int=1):

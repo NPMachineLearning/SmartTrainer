@@ -1,23 +1,26 @@
-import tensorflow as tf
-import matplotlib
-import matplotlib.pylab as plt
+# import tensorflow as tf
+# import matplotlib
+# import matplotlib.pylab as plt
+# matplotlib.use("QtAgg")
 import numpy as np
 import os
+import cv2
+import onnxruntime as ort
 
-matplotlib.use("QtAgg")
+
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 
-                          "movenet_singlepose_thunder_3.tflite")
+                          "movenet_singlepose_thunder_3.onnx")
 INPUT_SIZE = (256, 256)
 
-def validate_tensor_image(image):
-    if not isinstance(image, (tf.Tensor)):
-        raise Exception("image must be a Tensor image")
+# def validate_tensor_image(image):
+#     if not isinstance(image, (tf.Tensor)):
+#         raise Exception("image must be a Tensor image")
 
-def validate_image_dims(image, ndims):
-    image_dims = len(image.get_shape())
-    if ndims != image_dims:
-        raise Exception(f"image must be in dimension of {ndims} but got {image_dims}")
+# def validate_image_dims(image, ndims):
+#     image_dims = len(image.get_shape())
+#     if ndims != image_dims:
+#         raise Exception(f"image must be in dimension of {ndims} but got {image_dims}")
     
 def load_model(model_path=MODEL_PATH):
     """
@@ -29,19 +32,22 @@ def load_model(model_path=MODEL_PATH):
     Returns:
         tuple: (model, input_details, output_details)
     """
-    interpreter = tf.lite.Interpreter(model_path=model_path)
-    interpreter.allocate_tensors()
+    model = ort.InferenceSession(model_path)
     
-    # warming up model
-    img = tf.convert_to_tensor(np.zeros((INPUT_SIZE[0], INPUT_SIZE[0], 3)), dtype=tf.float32)
-    img = img[tf.newaxis, ...]
-    predict(img, 
-            interpreter, interpreter.get_input_details(), 
-            interpreter.get_output_details())
+    return model
+    # interpreter = tf.lite.Interpreter(model_path=model_path)
+    # interpreter.allocate_tensors()
     
-    return interpreter, interpreter.get_input_details(), interpreter.get_output_details()
+    # # warming up model
+    # img = tf.convert_to_tensor(np.zeros((INPUT_SIZE[0], INPUT_SIZE[0], 3)), dtype=tf.float32)
+    # img = img[tf.newaxis, ...]
+    # predict(img, 
+    #         interpreter, interpreter.get_input_details(), 
+    #         interpreter.get_output_details())
+    
+    # return interpreter, interpreter.get_input_details(), interpreter.get_output_details()
 
-def predict(image, model, input_details, output_details):
+def predict(image:np.ndarray, model:ort.InferenceSession):
     """
     Use movenet model to gnereate keypoints in yx coordinate from image
 
@@ -56,13 +62,27 @@ def predict(image, model, input_details, output_details):
         and they are in range of 0.0-1.0, last value is confident score from last dimension, 
         first dimension is 17 keypoints 
     """
-    validate_tensor_image(image)
-    validate_image_dims(image, 4)
-    model.set_tensor(input_details[0]['index'], image.numpy())
-    model.invoke()
-    kps_and_scores = model.get_tensor(output_details[0]['index'])
+    input_image = image.astype(np.float32)
+    input_image = ort.OrtValue.ortvalue_from_numpy(input_image)
+    outputs = ort.OrtValue.ortvalue_from_shape_and_type([1, 1, 17, 3], np.float32)
+    input_name = model.get_inputs()[0].name
+    output_name = model.get_outputs()[0].name
+    io_binding = model.io_binding()
+    io_binding.bind_ortvalue_input(input_name, input_image)
+    io_binding.bind_ortvalue_output(output_name, outputs)
+    model.run_with_iobinding(io_binding)
+    result = io_binding.copy_outputs_to_cpu()[0][0][0]
+    io_binding.clear_binding_inputs()
+    io_binding.clear_binding_outputs()
+    return result
     
-    return kps_and_scores[0][0]
+    # validate_tensor_image(image)
+    # validate_image_dims(image, 4)
+    # model.set_tensor(input_details[0]['index'], image.numpy())
+    # model.invoke()
+    # kps_and_scores = model.get_tensor(output_details[0]['index'])
+    
+    # return kps_and_scores[0][0]
 
 def preprocess_kps(kps, scale_xy=(1., 1.)):
     """
@@ -107,28 +127,28 @@ def normalize_kps(kps, image_width, image_height):
             
         return kps
     
-def preprocess_input_image(image, size=INPUT_SIZE, pad=False):
-    """
-    Preprocess image before fed it to model
+# def preprocess_input_image(image, size=INPUT_SIZE, pad=False):
+#     """
+#     Preprocess image before fed it to model
 
-    Args:
-        image (Tensor): image in tensor
-        size (tuple, optional): size of image.
-        pad (bool, optional): True to pad image.
+#     Args:
+#         image (Tensor): image in tensor
+#         size (tuple, optional): size of image.
+#         pad (bool, optional): True to pad image.
 
-    Returns:
-        Tensor: in dimension [batch, height, width channels]
-    """
-    validate_tensor_image(image)
-    validate_image_dims(image, 3)
-    new_image = tf.cast(image, dtype=tf.float32)
-    new_image = tf.expand_dims(new_image, axis=0)
-    if pad:
-        new_image = tf.image.resize_with_pad(new_image, *size)
-    else:
-        new_image = tf.image.resize(new_image, size)
+#     Returns:
+#         Tensor: in dimension [batch, height, width channels]
+#     """
+#     validate_tensor_image(image)
+#     validate_image_dims(image, 3)
+#     new_image = tf.cast(image, dtype=tf.float32)
+#     new_image = tf.expand_dims(new_image, axis=0)
+#     if pad:
+#         new_image = tf.image.resize_with_pad(new_image, *size)
+#     else:
+#         new_image = tf.image.resize(new_image, size)
     
-    return new_image
+#     return new_image
 
 def preprocess_input_image_cv(cv_image, size=INPUT_SIZE, pad=False, pad_color=(0,0,0)):
     """
@@ -148,7 +168,8 @@ def preprocess_input_image_cv(cv_image, size=INPUT_SIZE, pad=False, pad_color=(0
     Returns:
         NDArray: an image with shape (1, height, width, color)
     """
-    img = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+    # img = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+    img = cv_image
     if not pad:
         img = cv2.resize(img, size)
     
@@ -178,12 +199,9 @@ def preprocess_input_image_cv(cv_image, size=INPUT_SIZE, pad=False, pad_color=(0
     img = np.expand_dims(img, axis=0)
     return img
 
-if __name__ == "__main__":
-    import onnxruntime as onnx_rt
-    import cv2
+if __name__ == "__main__": 
+    model = load_model()
     
-    model = onnx_rt.InferenceSession("./movenet_singlepose_thunder_3.onnx", 
-                                     providers=["CPUExecutionProvider"])
     print(model.get_inputs()[0])
     print(model.get_outputs()[0])
     
@@ -191,11 +209,8 @@ if __name__ == "__main__":
     print(image.shape)
     image = preprocess_input_image_cv(image)
     
-    input_name = model.get_inputs()[0].name
-    input_img = image.astype(np.float32)
-    input_img = onnx_rt.OrtValue.ortvalue_from_numpy(input_img)
-    outputs = model.run(None, {input_name:input_img})
-    print(outputs[0].shape)
+    kps = predict(image, model)
+    print(kps.shape)
     
     
     # interpreter, inputs, outputs = load_model(MODEL_PATH)
