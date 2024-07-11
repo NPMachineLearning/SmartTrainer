@@ -130,17 +130,84 @@ def preprocess_input_image(image, size=INPUT_SIZE, pad=False):
     
     return new_image
 
+def preprocess_input_image_cv(cv_image, size=INPUT_SIZE, pad=False, pad_color=(0,0,0)):
+    """
+    Preprocess image before fed it to model
+    
+    This will resize image into target size, if pad is True then
+    image is resized in aspect ratio and padded with border
+
+    Args:
+        - image (numpy): Image from opencv as NDArray. (height, width, color)
+        where color is in BGR color channel. 
+        - size (tuple, optional): Target size for image.
+        - pad (bool, optional): Whether to pad image or not if true
+        then image is resized in aspect ratio and padded with border.
+        - pad_color(tuple, optional): Color for padding
+
+    Returns:
+        NDArray: an image with shape (1, height, width, color)
+    """
+    img = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+    if not pad:
+        img = cv2.resize(img, size)
+    
+    if pad:
+        # get original image size
+        original_size = (cv_image.shape[1], cv_image.shape[0])
+        
+        # calculate aspect ratio
+        ratio = float(max(size)) / max(original_size)
+        
+        # create new size to resize image to
+        new_size = tuple([int(x*ratio) for x in original_size])
+        img = cv2.resize(img, new_size)
+        
+        # get padding size
+        delta_w = size[0] - new_size[0]
+        delta_h = size[1] - new_size[1]
+        
+        # define padding size for top bottom left right
+        top, bottom = delta_h//2, delta_h-(delta_h//2)
+        left, right = delta_w//2, delta_w-(delta_w//2)
+        
+        # make padding 
+        img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=pad_color)
+    
+    # expand dimension    
+    img = np.expand_dims(img, axis=0)
+    return img
+
 if __name__ == "__main__":
-    interpreter, inputs, outputs = load_model(MODEL_PATH)
-    raw = tf.io.read_file("./test_video/squats/squat.gif")
-    raw_image = tf.io.decode_gif(raw)[15]
-    image = preprocess_input_image(raw_image, INPUT_SIZE, False)
-    kps_with_scores = predict(image, interpreter, inputs, outputs)
-    kps_with_scores = preprocess_kps(kps_with_scores, (raw_image.shape[1], raw_image.shape[0]))
-    fig, ax = plt.subplots(1)
-    ax.imshow(raw_image)
-    for kp in kps_with_scores:
-        x, y = kp[0], kp[1]
-        ax.add_patch(plt.Circle((x,y), 2.))
-    plt.show()
+    import onnxruntime as onnx_rt
+    import cv2
+    
+    model = onnx_rt.InferenceSession("./movenet_singlepose_thunder_3.onnx", 
+                                     providers=["CPUExecutionProvider"])
+    print(model.get_inputs()[0])
+    print(model.get_outputs()[0])
+    
+    image = cv2.imread("./Squat.jpg")
+    print(image.shape)
+    image = preprocess_input_image_cv(image)
+    
+    input_name = model.get_inputs()[0].name
+    input_img = image.astype(np.float32)
+    input_img = onnx_rt.OrtValue.ortvalue_from_numpy(input_img)
+    outputs = model.run(None, {input_name:input_img})
+    print(outputs[0].shape)
+    
+    
+    # interpreter, inputs, outputs = load_model(MODEL_PATH)
+    # raw = tf.io.read_file("./test_video/squats/squat.gif")
+    # raw_image = tf.io.decode_gif(raw)[15]
+    # image = preprocess_input_image(raw_image, INPUT_SIZE, False)
+    # kps_with_scores = predict(image, interpreter, inputs, outputs)
+    # kps_with_scores = preprocess_kps(kps_with_scores, (raw_image.shape[1], raw_image.shape[0]))
+    # fig, ax = plt.subplots(1)
+    # ax.imshow(raw_image)
+    # for kp in kps_with_scores:
+    #     x, y = kp[0], kp[1]
+    #     ax.add_patch(plt.Circle((x,y), 2.))
+    # plt.show()
     
