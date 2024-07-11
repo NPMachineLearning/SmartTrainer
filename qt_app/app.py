@@ -84,6 +84,10 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         # video queue
         self.video_queue:list[VideoRepetitionCounter] = []
         
+        # video release wait queue for 
+        # any video that will be released from memeory
+        self.video_release_wait_queue:list[VideoRepetitionCounter] = []
+        
         # create repetition counter 
         self.rep_counter = RepetitionCounter(CONFIG_FILE)
         
@@ -150,7 +154,14 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             v_rep_counter.requestInterruption()
         else:
             # pop first video from queue
-            self.video_queue.pop(0)
+            self._add_to_video_release_wait_queue(self.video_queue.pop(0))
+    
+    def _add_to_video_release_wait_queue(self, v_rep_counter:VideoRepetitionCounter):
+        # listen to finished signal
+        v_rep_counter.finished.connect(self.on_video_released)
+        
+        # add video to wait queue
+        self.video_release_wait_queue.append(v_rep_counter)
     
     def _create_video_rep_counter(self, rep_counter:RepetitionCounter):
         # create new video repetition counter
@@ -263,14 +274,18 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             
     def on_video_completed(self):
         # pop first video from queue
-        self.video_queue.pop(0)
+        self._add_to_video_release_wait_queue(self.video_queue.pop(0))
         
         self.start_button.setEnabled(False)
         self.pause_button.setEnabled(False)
-        
+    
+    def on_video_released(self):
+        # video is released pop from wait queue
+        self.video_release_wait_queue.pop(0)
+            
     def on_interrupted(self):
         # pop first video from queue
-        self.video_queue.pop(0)
+        self._add_to_video_release_wait_queue(self.video_queue.pop(0))
                 
     def on_start_clicked(self):
         # start last video in queue if it is not running
@@ -292,7 +307,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
                     
     def closeEvent(self, a0: QCloseEvent) -> None:
         if len(self.video_queue):
-            self._cancel_current_video(self.video_queue[-1])
+            for vid in self.video_queue:
+                self._cancel_current_video(vid)
         a0.accept()
 
 if __name__ == "__main__":
