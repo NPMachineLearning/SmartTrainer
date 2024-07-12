@@ -1,4 +1,3 @@
-# import tensorflow as tf
 # import matplotlib
 # import matplotlib.pylab as plt
 # matplotlib.use("QtAgg")
@@ -10,88 +9,61 @@ import onnxruntime as ort
 
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 
-                          "movenet_singlepose_thunder_3.onnx")
+                          "movenet_singlepose_thunder_v4.onnx")
 INPUT_SIZE = (256, 256)
-
-# def validate_tensor_image(image):
-#     if not isinstance(image, (tf.Tensor)):
-#         raise Exception("image must be a Tensor image")
-
-# def validate_image_dims(image, ndims):
-#     image_dims = len(image.get_shape())
-#     if ndims != image_dims:
-#         raise Exception(f"image must be in dimension of {ndims} but got {image_dims}")
     
 def load_model(model_path=MODEL_PATH):
     """
     Load movenet model
 
     Args:
-        model_path (str): model path
+        - model_path (str): path to onnx model. Default model 
+        https://www.kaggle.com/models/google/movenet/tensorFlow2/singlepose-thunder. 
+        The model was converted from Tensorflow model to ONNX by
+        https://onnxruntime.ai/
 
     Returns:
-        tuple: (model, input_details, output_details)
+        ONNX model
     """
-    model = ort.InferenceSession(model_path)
+    sess_options = ort.SessionOptions()
+    # use 1 thread for model inference
+    sess_options.intra_op_num_threads = 1
+    sess_options.execution_mode = ort.ExecutionMode.ORT_PARALLEL 
+    
+    ep_list = ['CPUExecutionProvider']
+    
+    model = ort.InferenceSession(model_path, sess_options=sess_options, providers=ep_list)
     
     return model
-    # interpreter = tf.lite.Interpreter(model_path=model_path)
-    # interpreter.allocate_tensors()
-    
-    # # warming up model
-    # img = tf.convert_to_tensor(np.zeros((INPUT_SIZE[0], INPUT_SIZE[0], 3)), dtype=tf.float32)
-    # img = img[tf.newaxis, ...]
-    # predict(img, 
-    #         interpreter, interpreter.get_input_details(), 
-    #         interpreter.get_output_details())
-    
-    # return interpreter, interpreter.get_input_details(), interpreter.get_output_details()
 
 def predict(image:np.ndarray, model:ort.InferenceSession):
     """
     Use movenet model to gnereate keypoints in yx coordinate from image
 
     Args:
-        image (Tensor): Image to generate keypoints
-        model (Movenet): Movenet model
-        input_details : input_details from movenet model
-        output_details : output_details from movenet model
+        - image (Tensor): Image to generate keypoints
+        - model (Movenet): Movenet model
 
     Returns:
         NDArray: in dimension [17, 3], first two value is coordinate in yx from last dimension
         and they are in range of 0.0-1.0, last value is confident score from last dimension, 
         first dimension is 17 keypoints 
     """
-    input_image = image.astype(np.float32)
-    input_image = ort.OrtValue.ortvalue_from_numpy(input_image)
-    outputs = ort.OrtValue.ortvalue_from_shape_and_type([1, 1, 17, 3], np.float32)
+    input_image = image.astype(np.int32)
     input_name = model.get_inputs()[0].name
     output_name = model.get_outputs()[0].name
-    io_binding = model.io_binding()
-    io_binding.bind_ortvalue_input(input_name, input_image)
-    io_binding.bind_ortvalue_output(output_name, outputs)
-    model.run_with_iobinding(io_binding)
-    result = io_binding.copy_outputs_to_cpu()[0][0][0]
-    io_binding.clear_binding_inputs()
-    io_binding.clear_binding_outputs()
-    return result
-    
-    # validate_tensor_image(image)
-    # validate_image_dims(image, 4)
-    # model.set_tensor(input_details[0]['index'], image.numpy())
-    # model.invoke()
-    # kps_and_scores = model.get_tensor(output_details[0]['index'])
-    
-    # return kps_and_scores[0][0]
+    # return a list of predictions
+    outputs = model.run([output_name], {input_name:input_image})
+    return outputs[0][0][0]
 
 def preprocess_kps(kps, scale_xy=(1., 1.)):
     """
     Change keypoints yx coordinate from movenet to xy coordinate
 
     Args:
-        kps (NDArray): Numpy 2d array straight from movenet in yx coordinate.
+        - kps (NDArray): Numpy 2d array straight from movenet in yx coordinate.
         expect coordinate in yx.
-        scale_xy (tuple, optional): Scale on x and y for keypoints. 
+        - scale_xy (tuple, optional): Scale on x and y for keypoints. 
         Defaults to (1., 1.).
 
     Returns:
@@ -114,9 +86,9 @@ def normalize_kps(kps, image_width, image_height):
         Normalize keypoints by image width and height
 
         Args:
-            kps (dict): keypoints
-            image_width (int): image width
-            image_height (int): image height
+            - kps (dict): keypoints
+            - image_width (int): image width
+            - image_height (int): image height
 
         Returns:
             _type_: _description_
@@ -126,29 +98,6 @@ def normalize_kps(kps, image_width, image_height):
             kp[1] /= image_height
             
         return kps
-    
-# def preprocess_input_image(image, size=INPUT_SIZE, pad=False):
-#     """
-#     Preprocess image before fed it to model
-
-#     Args:
-#         image (Tensor): image in tensor
-#         size (tuple, optional): size of image.
-#         pad (bool, optional): True to pad image.
-
-#     Returns:
-#         Tensor: in dimension [batch, height, width channels]
-#     """
-#     validate_tensor_image(image)
-#     validate_image_dims(image, 3)
-#     new_image = tf.cast(image, dtype=tf.float32)
-#     new_image = tf.expand_dims(new_image, axis=0)
-#     if pad:
-#         new_image = tf.image.resize_with_pad(new_image, *size)
-#     else:
-#         new_image = tf.image.resize(new_image, size)
-    
-#     return new_image
 
 def preprocess_input_image_cv(cv_image, size=INPUT_SIZE, pad=False, pad_color=(0,0,0)):
     """
@@ -159,7 +108,7 @@ def preprocess_input_image_cv(cv_image, size=INPUT_SIZE, pad=False, pad_color=(0
 
     Args:
         - image (numpy): Image from opencv as NDArray. (height, width, color)
-        where color is in BGR color channel. 
+        where color is in RGB color channel. 
         - size (tuple, optional): Target size for image.
         - pad (bool, optional): Whether to pad image or not if true
         then image is resized in aspect ratio and padded with border.
@@ -168,10 +117,8 @@ def preprocess_input_image_cv(cv_image, size=INPUT_SIZE, pad=False, pad_color=(0
     Returns:
         NDArray: an image with shape (1, height, width, color)
     """
-    # img = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-    img = cv_image
     if not pad:
-        img = cv2.resize(img, size)
+        img = cv2.resize(cv_image, size)
     
     if pad:
         # get original image size
@@ -182,7 +129,7 @@ def preprocess_input_image_cv(cv_image, size=INPUT_SIZE, pad=False, pad_color=(0
         
         # create new size to resize image to
         new_size = tuple([int(x*ratio) for x in original_size])
-        img = cv2.resize(img, new_size)
+        img = cv2.resize(cv_image, new_size)
         
         # get padding size
         delta_w = size[0] - new_size[0]
@@ -199,30 +146,17 @@ def preprocess_input_image_cv(cv_image, size=INPUT_SIZE, pad=False, pad_color=(0
     img = np.expand_dims(img, axis=0)
     return img
 
-if __name__ == "__main__": 
-    model = load_model()
+if __name__ == "__main__":
+    pass 
+    # model = load_model()
     
-    print(model.get_inputs()[0])
-    print(model.get_outputs()[0])
+    # print(model.get_inputs()[0])
+    # print(model.get_outputs()[0])
     
-    image = cv2.imread("./Squat.jpg")
-    print(image.shape)
-    image = preprocess_input_image_cv(image)
+    # image = cv2.imread("./Squat.jpg")
+    # print(image.shape)
+    # image = preprocess_input_image_cv(image)
     
-    kps = predict(image, model)
-    print(kps.shape)
-    
-    
-    # interpreter, inputs, outputs = load_model(MODEL_PATH)
-    # raw = tf.io.read_file("./test_video/squats/squat.gif")
-    # raw_image = tf.io.decode_gif(raw)[15]
-    # image = preprocess_input_image(raw_image, INPUT_SIZE, False)
-    # kps_with_scores = predict(image, interpreter, inputs, outputs)
-    # kps_with_scores = preprocess_kps(kps_with_scores, (raw_image.shape[1], raw_image.shape[0]))
-    # fig, ax = plt.subplots(1)
-    # ax.imshow(raw_image)
-    # for kp in kps_with_scores:
-    #     x, y = kp[0], kp[1]
-    #     ax.add_patch(plt.Circle((x,y), 2.))
-    # plt.show()
+    # kps = predict(image, model)
+    # print(kps.shape)
     
