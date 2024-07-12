@@ -1,4 +1,3 @@
-# import tensorflow as tf
 import cv2
 from .movenet.movenet_infer import load_model, predict, preprocess_input_image_cv, preprocess_kps, INPUT_SIZE, MODEL_PATH
 from .pkg.kps_metrics_jumping_jack import KpsMetricsJumpingJack
