@@ -26,6 +26,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
+        MainWindow.setWindowModality(Qt.WindowModal)
         MainWindow.resize(1066, 866)
         font = QFont()
         font.setBold(False)
@@ -90,7 +91,8 @@ class Ui_MainWindow(object):
         sizePolicy2.setHeightForWidth(self.exercise_list.sizePolicy().hasHeightForWidth())
         self.exercise_list.setSizePolicy(sizePolicy2)
         self.exercise_list.setFont(font2)
-        self.exercise_list.setStyleSheet(u"background-color: rgb(255, 255, 255);")
+        self.exercise_list.setStyleSheet(u"background-color: rgb(135, 135, 135);\n"
+"color: rgb(239, 239, 239);")
         self.exercise_list.setFrameShape(QFrame.Panel)
 
         self.verticalLayout.addWidget(self.exercise_list)

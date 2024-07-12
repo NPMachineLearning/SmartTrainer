@@ -39,7 +39,7 @@ from rep_counting.rep_counter import RepetitionCounter
 # incorrect path /Users/XXX-user-name-XXX not the program 
 # working directory
 CWDPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
-NO_VIDEO_SOURCE_MSG = "No video source"
+NO_VIDEO_SOURCE_MSG = "Select video source from top left menu"
 CONFIG_FILE = os.path.join(CWDPATH,
                            'smart_trainer_config/config.json')
 
@@ -314,5 +314,6 @@ class AppWindow(QMainWindow, Ui_MainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = AppWindow()
-    window.show()
+    window.showMaximized()
+    # window.show()
     sys.exit(app.exec())        

@@ -23,6 +23,7 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():
             Dialog.setObjectName(u"Dialog")
+        Dialog.setWindowModality(Qt.WindowModal)
         Dialog.resize(827, 788)
         self.verticalLayout = QVBoxLayout(Dialog)
         self.verticalLayout.setObjectName(u"verticalLayout")
@@ -39,6 +40,8 @@ class Ui_Dialog(object):
         self.camera_source_list = QListWidget(Dialog)
         self.camera_source_list.setObjectName(u"camera_source_list")
         self.camera_source_list.setFont(font)
+        self.camera_source_list.setStyleSheet(u"background-color: rgb(135, 135, 135);\n"
+"color: rgb(239, 239, 239);")
 
         self.verticalLayout.addWidget(self.camera_source_list)
 
