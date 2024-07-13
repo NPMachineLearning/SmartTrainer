@@ -3,24 +3,15 @@
 ################################################################################
 ## Form generated from reading UI file 'main_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.2
+## Created by: Qt User Interface Compiler version 5.15.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
-    QCursor, QFont, QFontDatabase, QGradient,
-    QIcon, QImage, QKeySequence, QLinearGradient,
-    QPainter, QPalette, QPixmap, QRadialGradient,
-    QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QFrame, QGroupBox,
-    QHBoxLayout, QLabel, QLayout, QListWidget,
-    QListWidgetItem, QMainWindow, QMenu, QMenuBar,
-    QPushButton, QSizePolicy, QStatusBar, QVBoxLayout,
-    QWidget)
+from PySide2.QtCore import *
+from PySide2.QtGui import *
+from PySide2.QtWidgets import *
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -30,6 +21,7 @@ class Ui_MainWindow(object):
         MainWindow.resize(1066, 866)
         font = QFont()
         font.setBold(False)
+        font.setWeight(50)
         font.setStrikeOut(False)
         MainWindow.setFont(font)
         MainWindow.setStyleSheet(u"")
@@ -43,7 +35,7 @@ class Ui_MainWindow(object):
         self.action_camera_source.setFont(font1)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.centralwidget.sizePolicy().hasHeightForWidth())
@@ -53,7 +45,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.img_frame = QLabel(self.centralwidget)
         self.img_frame.setObjectName(u"img_frame")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.img_frame.sizePolicy().hasHeightForWidth())
@@ -61,6 +53,7 @@ class Ui_MainWindow(object):
         font2 = QFont()
         font2.setPointSize(14)
         font2.setBold(True)
+        font2.setWeight(75)
         self.img_frame.setFont(font2)
         self.img_frame.setFrameShape(QFrame.Panel)
         self.img_frame.setFrameShadow(QFrame.Sunken)
@@ -85,7 +78,7 @@ class Ui_MainWindow(object):
 
         self.exercise_list = QListWidget(self.controller_left_layout)
         self.exercise_list.setObjectName(u"exercise_list")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.exercise_list.sizePolicy().hasHeightForWidth())
@@ -102,6 +95,7 @@ class Ui_MainWindow(object):
         font3 = QFont()
         font3.setPointSize(12)
         font3.setBold(True)
+        font3.setWeight(75)
         self.current_exercise_label.setFont(font3)
         self.current_exercise_label.setAlignment(Qt.AlignCenter)
 
@@ -118,7 +112,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.setSizeConstraint(QLayout.SetDefaultConstraint)
         self.label_3 = QLabel(self.controller_mid_layout)
         self.label_3.setObjectName(u"label_3")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy3.setHorizontalStretch(0)
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
@@ -154,6 +148,7 @@ class Ui_MainWindow(object):
         font4 = QFont()
         font4.setPointSize(12)
         font4.setBold(True)
+        font4.setWeight(75)
         font4.setKerning(True)
         self.draw_skeleton_checkbox.setFont(font4)
         self.draw_skeleton_checkbox.setAutoFillBackground(False)
@@ -205,7 +200,7 @@ class Ui_MainWindow(object):
 
         self.controller_right_layout = QFrame(self.centralwidget)
         self.controller_right_layout.setObjectName(u"controller_right_layout")
-        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy4 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy4.setHorizontalStretch(0)
         sizePolicy4.setVerticalStretch(0)
         sizePolicy4.setHeightForWidth(self.controller_right_layout.sizePolicy().hasHeightForWidth())
@@ -231,6 +226,7 @@ class Ui_MainWindow(object):
         font5 = QFont()
         font5.setPointSize(36)
         font5.setBold(True)
+        font5.setWeight(75)
         self.rep_count_label.setFont(font5)
         self.rep_count_label.setFrameShape(QFrame.NoFrame)
         self.rep_count_label.setFrameShadow(QFrame.Plain)
@@ -260,13 +256,15 @@ class Ui_MainWindow(object):
         font6.setBold(True)
         font6.setItalic(False)
         font6.setUnderline(False)
+        font6.setWeight(75)
         self.menubar.setFont(font6)
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
         font7 = QFont()
-        font7.setFamilies([u"Segoe UI"])
+        font7.setFamily(u"Segoe UI")
         font7.setPointSize(9)
         font7.setBold(False)
+        font7.setWeight(50)
         self.menuFile.setFont(font7)
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)

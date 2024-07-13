@@ -1,4 +1,4 @@
-from PySide6.QtCore import Signal
+from PySide2.QtCore import Signal
 from rep_counting.rep_counter import RepetitionCounter
 from .video_source import VideoSource
 

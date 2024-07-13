@@ -1,7 +1,7 @@
 import time
-from PySide6.QtWidgets import QDialog, QListWidgetItem
-from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtCore import Qt, Signal
+from PySide2.QtWidgets import QDialog, QListWidgetItem
+from PySide2.QtGui import QImage, QPixmap
+from PySide2.QtCore import Qt, Signal
 from .dialog_camera_source import Ui_Dialog
 import cv2
 import warnings

@@ -13,9 +13,9 @@ sys.path.insert(0, '../')
 import numpy as np
 
 # Qt
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QCloseEvent, QImage, QPixmap
-from PySide6.QtWidgets import QMainWindow, QApplication, QFileDialog
+from PySide2.QtCore import Qt
+from PySide2.QtGui import QCloseEvent, QImage, QPixmap
+from PySide2.QtWidgets import QMainWindow, QApplication, QFileDialog
 
 # Qt UI
 from ui.main_window import Ui_MainWindow
@@ -154,6 +154,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             v_rep_counter.requestInterruption()
         else:
             # pop first video from queue
+            # add it to video release wait queue
             self._add_to_video_release_wait_queue(self.video_queue.pop(0))
     
     def _add_to_video_release_wait_queue(self, v_rep_counter:VideoRepetitionCounter):
@@ -315,5 +316,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = AppWindow()
     window.showMaximized()
-    # window.show()
-    sys.exit(app.exec())        
+    sys.exit(app.exec_())        

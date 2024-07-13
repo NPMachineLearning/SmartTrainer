@@ -17,7 +17,7 @@ if get_qt_plugins_paths:
     # Inclusion of extra plugins (since cx_Freeze 6.8b2)
     # cx_Freeze automatically imports the following plugins depending on the
     # module used, but suppose we need the following:
-    include_files += get_qt_plugins_paths("PySide6", "multimedia")
+    include_files += get_qt_plugins_paths("PySide2", "multimedia")
 
 # Dependencies are automatically detected, but it might need
 # fine tuning.
@@ -26,7 +26,7 @@ build_options = {'packages': [],
                  'excludes': ["tkinter", "email", "pydoc"],
                  "bin_excludes": ["libqpdf.so", "libqpdf.dylib"],
                  'include_files': include_files,
-                 "zip_include_packages": ["PySide6", "shiboken6"],
+                 "zip_include_packages": ["PySide2", "shiboken2"],
                  # include module search path for 
                  # any modules outside and at same level
                  # of this directory

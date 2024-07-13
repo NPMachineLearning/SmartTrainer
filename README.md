@@ -76,7 +76,7 @@ Note: **PyQt6 is not working well with cx_Freeze for MacOSX**
    - `source ./.venv/bin/activate` (MacOSX, Linux)
    - `source ./.venv/bin/activate.fish` (MacOSX, Linux wiht fish shell)
 3. Install packages
-   `pip install tensorflow-cpu opencv-python-headless linuxpy matplotlib PySide6 cx_Freeze tf2onnx onnxruntime`
+   `pip install tensorflow-cpu opencv-python-headless linuxpy matplotlib PySide2 cx_Freeze tf2onnx onnxruntime`
 4. Go to directory qt_app
 5. Run command
    - `python setup.py build_exe` (Windows)
