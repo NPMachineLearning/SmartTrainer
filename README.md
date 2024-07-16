@@ -20,6 +20,11 @@ Here I use signal processing to handle the problem. One of downside of doing
 this is not generic which means it is specific to certain exercise or action and
 we need to manually define measurement for particular exercise or action.
 
+## Support exercises
+
+- Jumping jacks
+- Push ups
+
 ## ⚠ Note
 
 - Use [opencv-python](https://pypi.org/project/opencv-python/) for running app.
