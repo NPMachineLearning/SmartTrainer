@@ -12,15 +12,16 @@ import time
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
-from movenet.movenet_infer import load_model, predict, preprocess_input_image, preprocess_kps, INPUT_SIZE
+from movenet.movenet_infer import load_model, predict, preprocess_input_image_cv, preprocess_kps, INPUT_SIZE
 from pkg.kps_metrics_jumping_jack import KpsMetricsJumpingJack
 from pkg.kps_metrics_push_up import KpsMetricsPushup
+from pkg.kps_metrics import KpsMetrics
 
 WINDOW_FRAME = "Frame"
 # FRAME_DELAY = 1./30.
 DEFAULT_OUTPUT_DIR = "./smart_trainer_config"
 
-exercise_metrics = {
+exercise_metrics:dict[str,KpsMetrics] = {
     "jumpingjack": KpsMetricsJumpingJack(),
     "pushup": KpsMetricsPushup()
 }
@@ -33,7 +34,7 @@ def main(vid_path, exercise_name, output_directory=DEFAULT_OUTPUT_DIR):
     
     try:
         # load model
-        model, input_details, output_details = load_model()
+        model = load_model()
         
         # get get metrics object for exercise
         metrics = exercise_metrics.get(exercise_name, None)
@@ -52,10 +53,9 @@ def main(vid_path, exercise_name, output_directory=DEFAULT_OUTPUT_DIR):
             ret, frame = cap.read()
             if ret:
                 input_img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                input_img = tf.convert_to_tensor(input_img)
-                input_img = preprocess_input_image(input_img, INPUT_SIZE)
-                kps = predict(input_img, model, input_details, output_details)
-                kps = preprocess_kps(kps)
+                input_img = preprocess_input_image_cv(input_img, INPUT_SIZE)
+                kps = predict(input_img, model)
+                kps, _ = preprocess_kps(kps)
                 metrics.update_metrics(kps)
                 exercise_state = metrics.get_metrics()
                 for track_name, track_metrics in tracks.items():
@@ -87,17 +87,24 @@ def main(vid_path, exercise_name, output_directory=DEFAULT_OUTPUT_DIR):
         filter_tracks = []
         filter_metric_names = []
         for name, mc in tracks.items():
-            if name.endswith("dist") and np.std(mc)>=0.04:
-                filter_tracks.append(mc)
-                filter_metric_names.append(name)
-            if name.endswith("angle") and np.std(mc)>=10.:
-                filter_tracks.append(mc)
-                filter_metric_names.append(name)
+            filter_tracks.append(mc)
+            filter_metric_names.append(name)
+            
+            ## This block of code is preserved for further measurement
+            ## The block of code is to filter metrics below certain threshold
+            ## Could be removed in future
+            #
+            # if name.endswith("dist") and np.std(mc)>=0.04:
+            #     filter_tracks.append(mc)
+            #     filter_metric_names.append(name)
+            # if name.endswith("angle") and np.std(mc)>=10.:
+            #     filter_tracks.append(mc)
+            #     filter_metric_names.append(name)
         
         # sum up all remaining tracks that are not
         # stationary
         tracks_sum = np.sum(filter_tracks, axis=0)
-        
+            
         # data
         statistics = {}
         statistics['mean'] = np.mean(tracks_sum)
