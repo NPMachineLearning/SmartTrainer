@@ -105,9 +105,9 @@ class RepetitionCounter:
         
         input_img = preprocess_input_image_cv(cv_frame, INPUT_SIZE)
         kps_norm = predict(input_img, self.model)
-        kps_norm, conf_rate = preprocess_kps(kps_norm)
+        kps_norm, _conf_rate = preprocess_kps(kps_norm)
         metric:KpsMetrics = self.exercise_metrics[self.current_metric_name]
-        metric.update_metrics(kps_norm, confidence_rate=conf_rate)
+        metric.update_metrics(kps_norm, confidence_rate=None)
         return kps_norm 
         
     def draw_kps_skeleton(self, cv_frame, kps_norm, thickness:int=1):

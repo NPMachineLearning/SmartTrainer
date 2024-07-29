@@ -118,7 +118,7 @@ class KpsMetrics(ABC):
         """
         pass
     
-    def update_metrics(self, kps, ratio=(1., 1.), confidence_rate=1.0, confidence_rate_threshold=0.5) -> None:
+    def update_metrics(self, kps, ratio=(1., 1.), confidence_rate=None, confidence_rate_threshold=0.5) -> None:
         """
         Main process to update metrics and do 
         exercise prepetition counting
@@ -136,7 +136,9 @@ class KpsMetrics(ABC):
         Raises:
             Exception: low pass filter fail
         """
-        confidence_rate = max(min(confidence_rate, 1.0), 0.0)
+        if confidence_rate is not None:
+            confidence_rate = max(min(confidence_rate, 1.0), 0.0)
+
         confidence_rate_threshold = max(min(confidence_rate_threshold, 1.0), 0.0)
         
         ###
@@ -169,13 +171,17 @@ class KpsMetrics(ABC):
             
             ###
             # sum none stationary metrics
-            if len(self.tracked_metrics) > 0:
-                if confidence_rate >= confidence_rate_threshold:
-                    sum_metric = np.sum(none_stationary_metrics, axis=0)[0]
-                else:
-                    sum_metric = self.tracked_metrics[-1]
-            else:
+            if confidence_rate is None:
                 sum_metric = np.sum(none_stationary_metrics, axis=0)[0]
+            else:
+                if len(self.tracked_metrics) > 0:
+                    if confidence_rate >= confidence_rate_threshold:
+                        sum_metric = np.sum(none_stationary_metrics, axis=0)[0]
+                    else:
+                        sum_metric = self.tracked_metrics[-1]
+                else:
+                    sum_metric = np.sum(none_stationary_metrics, axis=0)[0]
+                    
             self.tracked_metrics.append(sum_metric)
             
             ### 
